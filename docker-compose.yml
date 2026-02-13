@@ -10,11 +10,11 @@ services:
       - DATABASE_URL=sqlite:///data/every_note.db
 
   frontend:
-    build: ./frontend
+    build: ./apps/web
     ports:
       - "5173:5173"
     volumes:
-      - ./frontend/src:/app/src
+      - ./apps/web/src:/app/src
     depends_on:
       - backend
 

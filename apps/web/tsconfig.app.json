@@ -25,8 +25,10 @@
     "noUncheckedSideEffectImports": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@every-note/shared": ["../../packages/shared/src/index.ts"],
+      "@every-note/shared/*": ["../../packages/shared/src/*.ts"]
     }
   },
-  "include": ["src"]
+  "include": ["src", "../../packages/shared/src"]
 }

@@ -1,0 +1,12 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "Every Note - self-hosted notes app backend"
+requires-python = ">=3.13"
+dependencies = [
+    "aiosqlite>=0.22.1",
+    "fastapi>=0.128.6",
+    "python-ulid>=3.1.0",
+    "sqlmodel>=0.0.32",
+    "uvicorn[standard]>=0.40.0",
+]

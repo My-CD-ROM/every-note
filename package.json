@@ -1,0 +1,5 @@
+{
+  "name": "every-note",
+  "private": true,
+  "workspaces": ["packages/*", "apps/*"]
+}

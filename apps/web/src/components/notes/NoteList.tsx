@@ -1,5 +1,5 @@
-import { useCallback } from 'react';
-import { CalendarClock, FileText, FolderIcon, GripVertical, ListChecks, ListTodo, Star } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { CalendarClock, Check, FileText, FolderIcon, GripVertical, ListChecks, Star } from 'lucide-react';
 import { checklistProgressFromContent } from '@/lib/checklist';
 import {
   DndContext,
@@ -40,6 +40,80 @@ function formatDue(iso: string): string {
   const isToday = d.toDateString() === now.toDateString();
   if (isToday) return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function InlineSubtasks({ noteId }: { noteId: string }) {
+  const [subtasks, setSubtasks] = useState<NoteResponse[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    notesApi.listSubtasks(noteId).then((data) => {
+      setSubtasks(data);
+      setLoaded(true);
+    });
+  }, [noteId]);
+
+  if (!loaded || subtasks.length === 0) return null;
+
+  const toggleComplete = async (e: React.MouseEvent, subtask: NoteResponse) => {
+    e.stopPropagation(); // Don't open the parent note
+    if (subtask.is_completed) {
+      await notesApi.uncomplete(subtask.id);
+    } else {
+      await notesApi.complete(subtask.id);
+    }
+    // Refresh
+    const data = await notesApi.listSubtasks(noteId);
+    setSubtasks(data);
+  };
+
+  const completedCount = subtasks.filter((s) => s.is_completed).length;
+
+  return (
+    <div className="mt-1.5 space-y-0.5">
+      {subtasks.slice(0, 5).map((sub) => (
+        <div
+          key={sub.id}
+          className="flex items-center gap-1.5"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={(e) => toggleComplete(e, sub)}
+            className={cn(
+              'h-3.5 w-3.5 rounded border shrink-0 flex items-center justify-center transition-colors',
+              sub.is_completed
+                ? 'bg-emerald-500 border-emerald-500 text-white'
+                : 'border-zinc-300 dark:border-zinc-600 hover:border-zinc-400 dark:hover:border-zinc-500'
+            )}
+          >
+            {sub.is_completed && <Check className="h-2.5 w-2.5" />}
+          </button>
+          <span className={cn(
+            'text-[11px] truncate',
+            sub.is_completed ? 'line-through text-zinc-400 dark:text-zinc-500' : 'text-zinc-600 dark:text-zinc-400'
+          )}>
+            {sub.title || 'Untitled'}
+          </span>
+        </div>
+      ))}
+      {subtasks.length > 5 && (
+        <span className="text-[10px] text-zinc-400 pl-5">
+          +{subtasks.length - 5} more
+        </span>
+      )}
+      <div className="flex items-center gap-1.5 pt-0.5">
+        <div className="flex-1 h-1 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-emerald-500 rounded-full transition-all"
+            style={{ width: `${(completedCount / subtasks.length) * 100}%` }}
+          />
+        </div>
+        <span className="text-[10px] text-zinc-400 shrink-0">
+          {completedCount}/{subtasks.length}
+        </span>
+      </div>
+    </div>
+  );
 }
 
 function SortableNoteCard({ note, showFolder }: { note: NoteResponse; showFolder: boolean }) {
@@ -96,10 +170,15 @@ function SortableNoteCard({ note, showFolder }: { note: NoteResponse; showFolder
         </div>
 
         {/* Preview */}
-        {preview && (
+        {preview && note.subtask_count === 0 && (
           <p className="text-xs text-zinc-500 dark:text-zinc-500 line-clamp-1 mt-0.5">
             {preview}
           </p>
+        )}
+
+        {/* Inline subtask checklist */}
+        {note.subtask_count > 0 && (
+          <InlineSubtasks noteId={note.id} />
         )}
 
         {/* Metadata row: date, folder, due, tags */}
@@ -141,18 +220,6 @@ function SortableNoteCard({ note, showFolder }: { note: NoteResponse; showFolder
               </span>
             );
           })()}
-
-          {note.subtask_count > 0 && (
-            <span className={cn(
-              'inline-flex items-center gap-0.5 text-[10px] font-medium rounded px-1 py-px',
-              note.subtask_completed === note.subtask_count
-                ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400'
-                : 'bg-violet-100 text-violet-600 dark:bg-violet-950/40 dark:text-violet-400'
-            )}>
-              <ListTodo className="h-2.5 w-2.5" />
-              {note.subtask_completed}/{note.subtask_count}
-            </span>
-          )}
 
           {note.tags.map((tag) => (
             <span

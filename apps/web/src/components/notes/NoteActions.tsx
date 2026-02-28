@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowUpFromDot, CornerDownRight, MoreHorizontal, FolderIcon, Tag, Undo2, Trash2, Download, CheckCircle2 } from 'lucide-react';
+import { ArrowUpFromDot, Circle, CornerDownRight, MoreHorizontal, FolderIcon, Tag, Undo2, Trash2, Download, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -17,6 +17,7 @@ import { useTagsStore } from '@/stores/tags-store';
 import { useUIStore } from '@/stores/ui-store';
 import { notesApi, exportApi } from '@/lib/api';
 import type { FolderTree, NoteResponse } from '@/lib/api';
+import { STATUSES } from '@/lib/statuses';
 
 function flattenFolders(tree: FolderTree[], depth = 0): Array<FolderTree & { depth: number }> {
   const result: Array<FolderTree & { depth: number }> = [];
@@ -204,6 +205,40 @@ export function NoteActions({ note }: { note: NoteResponse }) {
             </DropdownMenuSubContent>
           </DropdownMenuSub>
         )}
+
+        {/* Set status */}
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <Circle className="mr-2 h-4 w-4" /> Set status
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            {STATUSES.map((s) => (
+              <DropdownMenuItem
+                key={s.id}
+                onClick={async () => {
+                  await notesApi.setStatus(note.id, s.id);
+                  fetchNotes();
+                  setOpen(false);
+                }}
+              >
+                <span className="mr-2 h-2 w-2 rounded-full" style={{ backgroundColor: s.color }} />
+                {s.label}
+                {note.status === s.id && <span className="ml-auto text-xs">✓</span>}
+              </DropdownMenuItem>
+            ))}
+            {note.status && (
+              <DropdownMenuItem
+                onClick={async () => {
+                  await notesApi.setStatus(note.id, null);
+                  fetchNotes();
+                  setOpen(false);
+                }}
+              >
+                Remove status
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
 
         <DropdownMenuSeparator />
 

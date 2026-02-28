@@ -10,31 +10,19 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
-import { CalendarClock, Check, CheckCircle2, FolderIcon, GripVertical, Inbox, ListChecks, Star } from 'lucide-react';
+import { CalendarClock, Check, CheckCircle2, GripVertical, ListChecks, Star } from 'lucide-react';
 import { checklistProgressFromContent } from '@/lib/checklist';
+import { STATUSES } from '@/lib/statuses';
 import { cn } from '@/lib/utils';
 import { useNotesStore } from '@/stores/notes-store';
-import { useFoldersStore } from '@/stores/folders-store';
 import { notesApi } from '@/lib/api';
-import type { NoteResponse, FolderTree } from '@/lib/api';
+import type { NoteResponse } from '@/lib/api';
 
-interface Column {
-  id: string | null;
-  name: string;
-  icon: string | null;
+interface StatusColumn {
+  id: string;
+  label: string;
+  color: string;
   notes: NoteResponse[];
-}
-
-function flattenFolders(tree: FolderTree[]): { id: string; name: string; icon: string | null }[] {
-  const result: { id: string; name: string; icon: string | null }[] = [];
-  function walk(nodes: FolderTree[]) {
-    for (const node of nodes) {
-      result.push({ id: node.id, name: node.name, icon: node.icon });
-      walk(node.children);
-    }
-  }
-  walk(tree);
-  return result;
 }
 
 function formatDate(iso: string): string {
@@ -116,6 +104,7 @@ function NoteCardContent({ note, isDragging }: { note: NoteResponse; isDragging?
   const preview = note.content.slice(0, 80).replace(/[#*`>\-\[\]]/g, '').trim();
   const isPastDue = note.due_at ? new Date(note.due_at) < new Date() : false;
   const { done: doneCount, total: totalCount } = checklistProgressFromContent(note.content);
+  const isDone = note.status === 'done';
 
   return (
     <div
@@ -125,12 +114,16 @@ function NoteCardContent({ note, isDragging }: { note: NoteResponse; isDragging?
         'hover:border-border hover:shadow-md',
         isActive && 'ring-2 ring-primary/40 border-primary/30',
         isDragging && 'shadow-lg rotate-2 scale-105 opacity-90',
+        isDone && 'opacity-60',
       )}
     >
       <div className="flex items-center gap-1.5">
         <GripVertical className="h-3 w-3 text-muted-foreground/40 shrink-0 cursor-grab" />
         {note.is_pinned && <Star className="h-3 w-3 fill-amber-400 text-amber-400 shrink-0" />}
-        <span className="text-sm font-medium text-foreground truncate">
+        <span className={cn(
+          'text-sm font-medium text-foreground truncate',
+          isDone && 'line-through text-muted-foreground',
+        )}>
           {note.title || 'Untitled'}
         </span>
         <button
@@ -205,13 +198,13 @@ function DraggableNoteCard({ note }: { note: NoteResponse }) {
   );
 }
 
-function QuickAddInput({ folderId }: { folderId: string | null }) {
+function QuickAddInput({ status }: { status: string }) {
   const [title, setTitle] = useState('');
   const { createNote } = useNotesStore();
 
   const handleSubmit = async () => {
     if (!title.trim()) return;
-    await createNote({ title: title.trim(), folder_id: folderId });
+    await createNote({ title: title.trim(), status });
     setTitle('');
   };
 
@@ -226,24 +219,19 @@ function QuickAddInput({ folderId }: { folderId: string | null }) {
   );
 }
 
-function DroppableColumn({ column, isOver }: { column: Column; isOver: boolean }) {
-  const isUnfiled = column.id === null;
-
+function DroppableColumn({ column, isOver }: { column: StatusColumn; isOver: boolean }) {
   return (
     <div className={cn(
-      'flex-shrink-0 w-64 flex flex-col max-h-full rounded-xl p-3 transition-all',
+      'flex-shrink-0 w-72 flex flex-col max-h-full rounded-xl p-3 transition-all',
       isOver && 'bg-primary/5 ring-2 ring-primary/20 ring-dashed',
     )}>
-      <div className="flex items-center gap-1.5 mb-3 px-0.5">
-        {column.icon ? (
-          <span className="text-sm shrink-0">{column.icon}</span>
-        ) : isUnfiled ? (
-          <Inbox className="h-3.5 w-3.5 text-muted-foreground/60" />
-        ) : (
-          <FolderIcon className="h-3.5 w-3.5 text-muted-foreground/60" />
-        )}
+      <div className="flex items-center gap-2 mb-3 px-0.5">
+        <span
+          className="h-2.5 w-2.5 rounded-full shrink-0"
+          style={{ backgroundColor: column.color }}
+        />
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider truncate">
-          {column.name}
+          {column.label}
         </h3>
         <span className="text-[10px] text-muted-foreground/50 tabular-nums ml-auto bg-muted rounded-full px-1.5 py-px">
           {column.notes.length}
@@ -254,15 +242,15 @@ function DroppableColumn({ column, isOver }: { column: Column; isOver: boolean }
           <DraggableNoteCard key={note.id} note={note} />
         ))}
       </div>
-      <QuickAddInput folderId={column.id} />
+      <QuickAddInput status={column.id} />
     </div>
   );
 }
 
-function DroppableColumnWrapper({ column }: { column: Column }) {
+function DroppableColumnWrapper({ column }: { column: StatusColumn }) {
   const { setNodeRef, isOver } = useDroppable({
-    id: `column-${column.id ?? '_unfiled'}`,
-    data: { folderId: column.id },
+    id: `status-${column.id}`,
+    data: { status: column.id },
   });
 
   return (
@@ -273,51 +261,42 @@ function DroppableColumnWrapper({ column }: { column: Column }) {
 }
 
 export function BoardView() {
-  const { notes, updateNote } = useNotesStore();
-  const { tree, fetchTree } = useFoldersStore();
+  const { notes, fetchNotes } = useNotesStore();
   const [activeDragNote, setActiveDragNote] = useState<NoteResponse | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
 
-  useEffect(() => {
-    fetchTree();
-  }, [fetchTree]);
-
-  const columns = useMemo<Column[]>(() => {
-    const folders = flattenFolders(tree);
-    const byFolder = new Map<string, NoteResponse[]>();
+  // Board shows all notes — assign status 'backlog' to notes without one
+  const columns = useMemo<StatusColumn[]>(() => {
+    const byStatus = new Map<string, NoteResponse[]>();
+    for (const s of STATUSES) {
+      byStatus.set(s.id, []);
+    }
 
     for (const note of notes) {
-      if (note.folder_id) {
-        const existing = byFolder.get(note.folder_id) || [];
-        existing.push(note);
-        byFolder.set(note.folder_id, existing);
-      }
+      if (note.parent_id) continue; // subtasks don't appear as cards
+      const st = note.status || 'backlog';
+      const arr = byStatus.get(st);
+      if (arr) arr.push(note);
+      else byStatus.get('backlog')!.push(note);
     }
 
-    const cols: Column[] = folders.map((f) => ({
-      id: f.id,
-      name: f.name,
-      icon: f.icon,
-      notes: byFolder.get(f.id) || [],
+    return STATUSES.map((s) => ({
+      id: s.id,
+      label: s.label,
+      color: s.color,
+      notes: byStatus.get(s.id) || [],
     }));
-
-    const unfiled = notes.filter((n) => !n.folder_id);
-    if (unfiled.length > 0 || cols.length === 0) {
-      cols.push({ id: null, name: 'Unfiled', icon: null, notes: unfiled });
-    }
-
-    return cols;
-  }, [notes, tree]);
+  }, [notes]);
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const note = notes.find((n) => n.id === event.active.id);
     setActiveDragNote(note || null);
   }, [notes]);
 
-  const handleDragEnd = useCallback((event: DragEndEvent) => {
+  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     setActiveDragNote(null);
     const { active, over } = event;
     if (!over) return;
@@ -325,19 +304,26 @@ export function BoardView() {
     const noteId = active.id as string;
     const overId = over.id as string;
 
-    let targetFolderId: string | null = null;
-    if (overId.startsWith('column-')) {
-      const folderId = overId.replace('column-', '');
-      targetFolderId = folderId === '_unfiled' ? null : folderId;
-    } else {
-      return;
-    }
+    if (!overId.startsWith('status-')) return;
+    const targetStatus = overId.replace('status-', '');
 
     const note = notes.find((n) => n.id === noteId);
-    if (!note || note.folder_id === targetFolderId) return;
+    if (!note) return;
 
-    updateNote(noteId, { folder_id: targetFolderId });
-  }, [notes, updateNote]);
+    const currentStatus = note.status || 'backlog';
+    if (currentStatus === targetStatus) return;
+
+    // Optimistic update
+    useNotesStore.setState((s) => ({
+      notes: s.notes.map((n) => (n.id === noteId ? { ...n, status: targetStatus } : n)),
+    }));
+
+    try {
+      await notesApi.setStatus(noteId, targetStatus);
+    } catch {
+      fetchNotes(); // Revert on error
+    }
+  }, [notes, fetchNotes]);
 
   if (notes.length === 0) {
     return (
@@ -355,12 +341,12 @@ export function BoardView() {
     >
       <div className="flex gap-4 p-4 overflow-x-auto h-full items-start">
         {columns.map((col) => (
-          <DroppableColumnWrapper key={col.id ?? '_unfiled'} column={col} />
+          <DroppableColumnWrapper key={col.id} column={col} />
         ))}
       </div>
       <DragOverlay>
         {activeDragNote && (
-          <div className="w-64">
+          <div className="w-72">
             <NoteCardContent note={activeDragNote} isDragging />
           </div>
         )}

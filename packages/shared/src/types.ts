@@ -20,6 +20,7 @@ export interface NoteResponse {
   daily_date: string | null;
   due_at: string | null;
   parent_id: string | null;
+  status: string | null;
   created_at: string;
   updated_at: string;
   tags: TagBrief[];

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CalendarClock, Check, CheckCircle2, ChevronRight, Download, FileText, History, ListChecks, Loader2, MoreHorizontal, Star, Tag, Trash2, Undo2, X } from 'lucide-react';
+import { CalendarClock, Check, CheckCircle2, ChevronRight, Circle, Download, FileText, History, ListChecks, Loader2, MoreHorizontal, Star, Tag, Trash2, Undo2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -14,6 +14,7 @@ import { SubtaskList } from './SubtaskList';
 import { useNotesStore } from '@/stores/notes-store';
 import { useTagsStore } from '@/stores/tags-store';
 import { notesApi, exportApi } from '@/lib/api';
+import { STATUSES, STATUS_MAP } from '@/lib/statuses';
 
 function formatDueAt(iso: string): string {
   const d = new Date(iso);
@@ -377,6 +378,55 @@ export function NoteEditor() {
                   </button>
                 );
               })}
+            </PopoverContent>
+          </Popover>
+
+          {/* Status */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0"
+                title={note.status ? `Status: ${STATUS_MAP[note.status]?.label || note.status}` : 'Set status'}
+              >
+                <Circle
+                  className="h-4 w-4"
+                  style={note.status ? { color: STATUS_MAP[note.status]?.color, fill: STATUS_MAP[note.status]?.color } : undefined}
+                />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-40 p-1" align="end">
+              <div className="text-xs font-medium text-muted-foreground px-2 py-1">Status</div>
+              {STATUSES.map((s) => (
+                <button
+                  key={s.id}
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors"
+                  onClick={async () => {
+                    await notesApi.setStatus(note.id, s.id);
+                    fetchNotes();
+                  }}
+                >
+                  <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                  <span>{s.label}</span>
+                  {note.status === s.id && <Check className="h-3 w-3 ml-auto text-primary" />}
+                </button>
+              ))}
+              {note.status && (
+                <>
+                  <div className="border-t my-1" />
+                  <button
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors text-muted-foreground"
+                    onClick={async () => {
+                      await notesApi.setStatus(note.id, null);
+                      fetchNotes();
+                    }}
+                  >
+                    <X className="h-3 w-3" />
+                    Remove status
+                  </button>
+                </>
+              )}
             </PopoverContent>
           </Popover>
 

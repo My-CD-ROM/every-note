@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CalendarClock, Check, CheckCircle2, Download, FileText, History, ListChecks, Loader2, Star, Tag, Trash2, Undo2, X } from 'lucide-react';
+import { CalendarClock, Check, CheckCircle2, ChevronRight, Download, FileText, History, ListChecks, Loader2, Star, Tag, Trash2, Undo2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -9,6 +9,7 @@ import { ChecklistEditor } from './ChecklistEditor';
 import { FormatToolbar } from './FormatToolbar';
 import { VersionHistory } from './VersionHistory';
 import { Backlinks } from './Backlinks';
+import { SubtaskList } from './SubtaskList';
 import { useNotesStore } from '@/stores/notes-store';
 import { useTagsStore } from '@/stores/tags-store';
 import { notesApi, exportApi } from '@/lib/api';
@@ -24,6 +25,38 @@ export function NoteEditor() {
   const { notes, activeNoteId, updateNote, deleteNote, setActiveNote, fetchNotes, completeNote, uncompleteNote } = useNotesStore();
   const { tags, fetchTags } = useTagsStore();
   const note = notes.find((n) => n.id === activeNoteId);
+
+  // Breadcrumb: track parent when drilling into a subtask
+  const [parentStack, setParentStack] = useState<{ id: string; title: string }[]>([]);
+
+  const handleOpenSubtask = useCallback(async (subtaskId: string) => {
+    if (!note) return;
+    // Push current note to breadcrumb stack
+    setParentStack((prev) => [...prev, { id: note.id, title: note.title || 'Untitled' }]);
+    // Load subtask into the notes list if not already there, then set active
+    try {
+      const subtask = await notesApi.get(subtaskId);
+      useNotesStore.setState((s) => {
+        const exists = s.notes.some((n) => n.id === subtaskId);
+        return {
+          notes: exists ? s.notes.map((n) => (n.id === subtaskId ? subtask : n)) : [subtask, ...s.notes],
+          activeNoteId: subtaskId,
+        };
+      });
+    } catch {
+      // If loading fails, just try setting active
+      setActiveNote(subtaskId);
+    }
+  }, [note, setActiveNote]);
+
+  const handleBreadcrumbNav = useCallback((targetId: string) => {
+    // Pop back to the target in the stack
+    setParentStack((prev) => {
+      const idx = prev.findIndex((p) => p.id === targetId);
+      return idx >= 0 ? prev.slice(0, idx) : [];
+    });
+    setActiveNote(targetId);
+  }, [setActiveNote]);
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -88,6 +121,11 @@ export function NoteEditor() {
       } else {
         setDueDate(undefined);
         setDueTime('12:00');
+      }
+      // Clear breadcrumb if navigating to a top-level note from the list
+      if (!note.parent_id && parentStack.length > 0) {
+        const isInStack = parentStack.some((p) => p.id === note.id);
+        if (!isInStack) setParentStack([]);
       }
     }
   }, [note?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -198,6 +236,24 @@ export function NoteEditor() {
   return (
     <div className="flex h-full">
       <div className="flex flex-1 flex-col min-w-0">
+        {/* Breadcrumb navigation for subtasks */}
+        {parentStack.length > 0 && (
+          <div className="flex items-center gap-1 px-4 py-1.5 border-b bg-muted/30 text-xs">
+            {parentStack.map((parent) => (
+              <span key={parent.id} className="flex items-center gap-1">
+                <button
+                  onClick={() => handleBreadcrumbNav(parent.id)}
+                  className="text-muted-foreground hover:text-foreground hover:underline transition-colors truncate max-w-[150px]"
+                >
+                  {parent.title}
+                </button>
+                <ChevronRight className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+              </span>
+            ))}
+            <span className="text-foreground font-medium truncate">{title || 'Untitled'}</span>
+          </div>
+        )}
+
         {/* Top toolbar: title + action buttons */}
         <div className="flex items-center gap-1 border-b px-4 py-2 bg-background/50">
           <Input
@@ -438,6 +494,11 @@ export function NoteEditor() {
             </div>
           )}
         </div>
+
+        {/* Subtasks (only for top-level notes) */}
+        {!note.parent_id && (
+          <SubtaskList noteId={note.id} onOpenSubtask={handleOpenSubtask} />
+        )}
 
         {/* Backlinks */}
         <Backlinks noteId={note.id} />

@@ -93,6 +93,7 @@ def init_db():
         ("notes", "note_type", "ALTER TABLE notes ADD COLUMN note_type TEXT NOT NULL DEFAULT 'note'"),
         ("notes", "is_completed", "ALTER TABLE notes ADD COLUMN is_completed INTEGER NOT NULL DEFAULT 0"),
         ("notes", "completed_at", "ALTER TABLE notes ADD COLUMN completed_at TEXT"),
+        ("notes", "parent_id", "ALTER TABLE notes ADD COLUMN parent_id TEXT REFERENCES notes(id) ON DELETE CASCADE"),
     ]
     for table, column, sql in migrations:
         try:
@@ -100,11 +101,15 @@ def init_db():
         except sqlite3.OperationalError:
             pass  # Column already exists
 
-    # Create index for daily_date after migration
-    try:
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_notes_daily_date ON notes(daily_date)")
-    except sqlite3.OperationalError:
-        pass
+    # Create indexes for migrated columns
+    for idx_sql in [
+        "CREATE INDEX IF NOT EXISTS idx_notes_daily_date ON notes(daily_date)",
+        "CREATE INDEX IF NOT EXISTS idx_notes_parent ON notes(parent_id)",
+    ]:
+        try:
+            conn.execute(idx_sql)
+        except sqlite3.OperationalError:
+            pass
 
     # Create FTS5 virtual table (must check separately since CREATE ... IF NOT EXISTS not supported for virtual tables)
     fts_exists = conn.execute(

@@ -9,6 +9,7 @@ class NoteCreate(BaseModel):
     content: str = ""
     folder_id: Optional[str] = None
     note_type: str = "note"
+    parent_id: Optional[str] = None
 
 
 class NoteUpdate(BaseModel):
@@ -43,9 +44,12 @@ class NoteResponse(BaseModel):
     is_daily: bool
     daily_date: Optional[str]
     due_at: Optional[str]
+    parent_id: Optional[str]
     created_at: str
     updated_at: str
     tags: list[TagBrief] = []
+    subtask_count: int = 0
+    subtask_completed: int = 0
 
 
 # --- Folders ---

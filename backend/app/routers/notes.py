@@ -23,13 +23,31 @@ S = Annotated[Session, Depends(get_session)]
 WIKILINK_RE = re.compile(r"\[\[([^\]]+)\]\]")
 
 
+def _subtask_counts(note_id: str, session: Session) -> tuple[int, int]:
+    """Return (total, completed) subtask counts for a note."""
+    from sqlalchemy import func
+
+    total = session.exec(
+        select(func.count()).where(Note.parent_id == note_id)
+    ).one()
+    completed = session.exec(
+        select(func.count()).where(
+            Note.parent_id == note_id, Note.is_completed == True  # noqa: E712
+        )
+    ).one()
+    return total, completed
+
+
 def _note_response(note: Note, session: Session) -> NoteResponse:
     tags = session.exec(
         select(Tag).join(NoteTag).where(NoteTag.note_id == note.id)
     ).all()
+    subtask_count, subtask_completed = _subtask_counts(note.id, session)
     return NoteResponse(
         **note.model_dump(),
         tags=[TagBrief(id=t.id, name=t.name, color=t.color) for t in tags],
+        subtask_count=subtask_count,
+        subtask_completed=subtask_completed,
     )
 
 
@@ -63,8 +81,15 @@ def list_notes(
     trashed: bool = False,
     pinned: Optional[bool] = None,
     completed: Optional[bool] = None,
+    parent_id: Optional[str] = None,
 ):
     query = select(Note).where(Note.is_trashed == trashed)
+
+    # By default, only show top-level notes (no parent)
+    if parent_id is not None:
+        query = query.where(Note.parent_id == parent_id)
+    else:
+        query = query.where(Note.parent_id == None)  # noqa: E711
 
     if completed is True:
         query = query.where(Note.is_completed == True)  # noqa: E712
@@ -96,12 +121,21 @@ def get_note(note_id: str, session: S):
 
 @router.post("", response_model=NoteResponse, status_code=201)
 def create_note(data: NoteCreate, session: S):
+    # Enforce one-level nesting: subtasks cannot have subtasks
+    if data.parent_id:
+        parent = session.get(Note, data.parent_id)
+        if not parent:
+            raise HTTPException(404, "Parent note not found")
+        if parent.parent_id:
+            raise HTTPException(400, "Cannot nest subtasks more than one level deep")
+
     note = Note(
         id=generate_ulid(),
         title=data.title,
         content=data.content,
         folder_id=data.folder_id,
         note_type=data.note_type,
+        parent_id=data.parent_id,
     )
     session.add(note)
     session.flush()
@@ -150,11 +184,21 @@ def trash_note(note_id: str, session: S, permanent: bool = False):
     if not note:
         raise HTTPException(404, "Note not found")
 
+    # Cascade to subtasks
+    subtasks = session.exec(select(Note).where(Note.parent_id == note_id)).all()
+
     if permanent:
+        for sub in subtasks:
+            session.delete(sub)
         session.delete(note)
     else:
+        now = utc_now()
+        for sub in subtasks:
+            sub.is_trashed = True
+            sub.trashed_at = now
+            session.add(sub)
         note.is_trashed = True
-        note.trashed_at = utc_now()
+        note.trashed_at = now
         session.add(note)
 
     session.commit()
@@ -170,6 +214,14 @@ def restore_note(note_id: str, session: S):
     note.is_trashed = False
     note.trashed_at = None
     session.add(note)
+
+    # Cascade restore to subtasks
+    subtasks = session.exec(select(Note).where(Note.parent_id == note_id)).all()
+    for sub in subtasks:
+        sub.is_trashed = False
+        sub.trashed_at = None
+        session.add(sub)
+
     session.commit()
     session.refresh(note)
     return _note_response(note, session)
@@ -301,6 +353,21 @@ def get_backlinks(note_id: str, session: S):
         .where(NoteLink.target_id == note_id, Note.is_trashed == False)  # noqa: E712
     ).all()
     return [BacklinkResponse(id=n.id, title=n.title, updated_at=n.updated_at) for n in sources]
+
+
+# --- Subtasks ---
+
+@router.get("/{note_id}/subtasks", response_model=list[NoteResponse])
+def list_subtasks(note_id: str, session: S):
+    note = session.get(Note, note_id)
+    if not note:
+        raise HTTPException(404, "Note not found")
+    subtasks = session.exec(
+        select(Note)
+        .where(Note.parent_id == note_id, Note.is_trashed == False)  # noqa: E712
+        .order_by(Note.position, Note.created_at)
+    ).all()
+    return [_note_response(s, session) for s in subtasks]
 
 
 # --- Reorder ---

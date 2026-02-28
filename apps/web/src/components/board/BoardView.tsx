@@ -10,11 +10,12 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
-import { CalendarClock, CheckCircle2, FolderIcon, GripVertical, Inbox, ListChecks, Star } from 'lucide-react';
+import { CalendarClock, Check, CheckCircle2, FolderIcon, GripVertical, Inbox, ListChecks, Star } from 'lucide-react';
 import { checklistProgressFromContent } from '@/lib/checklist';
 import { cn } from '@/lib/utils';
 import { useNotesStore } from '@/stores/notes-store';
 import { useFoldersStore } from '@/stores/folders-store';
+import { notesApi } from '@/lib/api';
 import type { NoteResponse, FolderTree } from '@/lib/api';
 
 interface Column {
@@ -42,6 +43,71 @@ function formatDate(iso: string): string {
   if (d.toDateString() === now.toDateString()) return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
   if (d.getFullYear() === now.getFullYear()) return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' });
+}
+
+function BoardInlineSubtasks({ noteId }: { noteId: string }) {
+  const [subtasks, setSubtasks] = useState<NoteResponse[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    notesApi.listSubtasks(noteId).then((data) => {
+      setSubtasks(data);
+      setLoaded(true);
+    });
+  }, [noteId]);
+
+  if (!loaded || subtasks.length === 0) return null;
+
+  const toggleComplete = async (e: React.MouseEvent, subtask: NoteResponse) => {
+    e.stopPropagation();
+    if (subtask.is_completed) {
+      await notesApi.uncomplete(subtask.id);
+    } else {
+      await notesApi.complete(subtask.id);
+    }
+    const data = await notesApi.listSubtasks(noteId);
+    setSubtasks(data);
+  };
+
+  const completedCount = subtasks.filter((s) => s.is_completed).length;
+
+  return (
+    <div className="mt-1.5 ml-[18px] space-y-0.5">
+      {subtasks.slice(0, 4).map((sub) => (
+        <div key={sub.id} className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+          <button
+            onClick={(e) => toggleComplete(e, sub)}
+            className={cn(
+              'h-3 w-3 rounded border shrink-0 flex items-center justify-center transition-colors',
+              sub.is_completed
+                ? 'bg-emerald-500 border-emerald-500 text-white'
+                : 'border-muted-foreground/30 hover:border-muted-foreground/60'
+            )}
+          >
+            {sub.is_completed && <Check className="h-2 w-2" />}
+          </button>
+          <span className={cn(
+            'text-[11px] truncate',
+            sub.is_completed ? 'line-through text-muted-foreground/50' : 'text-muted-foreground'
+          )}>
+            {sub.title || 'Untitled'}
+          </span>
+        </div>
+      ))}
+      {subtasks.length > 4 && (
+        <span className="text-[10px] text-muted-foreground/50 pl-[18px]">+{subtasks.length - 4} more</span>
+      )}
+      <div className="flex items-center gap-1.5 pt-0.5">
+        <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
+          <div
+            className="h-full bg-emerald-500 rounded-full transition-all"
+            style={{ width: `${(completedCount / subtasks.length) * 100}%` }}
+          />
+        </div>
+        <span className="text-[10px] text-muted-foreground/50 shrink-0">{completedCount}/{subtasks.length}</span>
+      </div>
+    </div>
+  );
 }
 
 function NoteCardContent({ note, isDragging }: { note: NoteResponse; isDragging?: boolean }) {
@@ -75,9 +141,11 @@ function NoteCardContent({ note, isDragging }: { note: NoteResponse; isDragging?
           <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground/50 hover:text-emerald-500" />
         </button>
       </div>
-      {preview && (
+      {note.subtask_count > 0 ? (
+        <BoardInlineSubtasks noteId={note.id} />
+      ) : preview ? (
         <p className="text-xs text-muted-foreground line-clamp-2 mt-1 ml-[18px]">{preview}</p>
-      )}
+      ) : null}
       <div className="flex items-center gap-1.5 mt-1.5 ml-[18px] flex-wrap">
         <span className="text-[10px] text-muted-foreground/70">{formatDate(note.updated_at)}</span>
         {note.due_at && (

@@ -6,7 +6,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { sidebarOpen, mobileSidebarOpen, setMobileSidebarOpen } = useUIStore();
 
   return (
-    <div className="flex h-screen bg-white dark:bg-zinc-950">
+    <div className="flex h-screen bg-background">
       {/* Desktop sidebar — no Sheet, no portal, no overlay */}
       {sidebarOpen && (
         <aside className="hidden md:flex">

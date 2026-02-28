@@ -57,11 +57,11 @@ export function SearchPalette() {
             <FileText className="mr-2 h-4 w-4 shrink-0" />
             <div className="flex flex-col overflow-hidden">
               <span className="truncate font-medium">{r.title || 'Untitled'}</span>
-              <span className="text-xs text-zinc-500 truncate">
+              <span className="text-xs text-muted-foreground truncate">
                 {r.snippet.replace(/<[^>]*>/g, '')}
               </span>
               {r.folder_name && (
-                <span className="flex items-center gap-1 text-xs text-zinc-400">
+                <span className="flex items-center gap-1 text-xs text-muted-foreground/60">
                   <Folder className="h-3 w-3" />
                   {r.folder_name}
                 </span>

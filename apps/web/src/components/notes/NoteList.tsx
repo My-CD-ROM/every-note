@@ -83,32 +83,32 @@ function InlineSubtasks({ noteId }: { noteId: string }) {
               'h-3.5 w-3.5 rounded border shrink-0 flex items-center justify-center transition-colors',
               sub.is_completed
                 ? 'bg-emerald-500 border-emerald-500 text-white'
-                : 'border-zinc-300 dark:border-zinc-600 hover:border-zinc-400 dark:hover:border-zinc-500'
+                : 'border-border hover:border-muted-foreground/60'
             )}
           >
             {sub.is_completed && <Check className="h-2.5 w-2.5" />}
           </button>
           <span className={cn(
             'text-[11px] truncate',
-            sub.is_completed ? 'line-through text-zinc-400 dark:text-zinc-500' : 'text-zinc-600 dark:text-zinc-400'
+            sub.is_completed ? 'line-through text-muted-foreground/50' : 'text-muted-foreground'
           )}>
             {sub.title || 'Untitled'}
           </span>
         </div>
       ))}
       {subtasks.length > 5 && (
-        <span className="text-[10px] text-zinc-400 pl-5">
+        <span className="text-[10px] text-muted-foreground/50 pl-5">
           +{subtasks.length - 5} more
         </span>
       )}
       <div className="flex items-center gap-1.5 pt-0.5">
-        <div className="flex-1 h-1 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+        <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
           <div
             className="h-full bg-emerald-500 rounded-full transition-all"
             style={{ width: `${(completedCount / subtasks.length) * 100}%` }}
           />
         </div>
-        <span className="text-[10px] text-zinc-400 shrink-0">
+        <span className="text-[10px] text-muted-foreground/50 shrink-0">
           {completedCount}/{subtasks.length}
         </span>
       </div>
@@ -144,8 +144,8 @@ function SortableNoteCard({ note, showFolder }: { note: NoteResponse; showFolder
       style={style}
       className={cn(
         'group flex items-start gap-1.5 rounded-md px-2 py-1.5 transition-colors cursor-pointer',
-        'hover:bg-zinc-100 dark:hover:bg-zinc-800/70',
-        isActive && 'bg-indigo-50 dark:bg-indigo-950/30 ring-1 ring-indigo-200 dark:ring-indigo-800'
+        'hover:bg-muted',
+        isActive && 'bg-primary/10 ring-1 ring-primary/30'
       )}
       onClick={() => setActiveNote(note.id)}
     >
@@ -155,7 +155,7 @@ function SortableNoteCard({ note, showFolder }: { note: NoteResponse; showFolder
         {...attributes}
         {...listeners}
       >
-        <GripVertical className="h-3 w-3 text-zinc-300 dark:text-zinc-600" />
+        <GripVertical className="h-3 w-3 text-muted-foreground/40" />
       </button>
 
       {/* Content */}
@@ -163,15 +163,15 @@ function SortableNoteCard({ note, showFolder }: { note: NoteResponse; showFolder
         {/* Title row */}
         <div className="flex items-center gap-1.5">
           {note.is_pinned && <Star className="h-3 w-3 shrink-0 fill-amber-400 text-amber-400" />}
-          {note.note_type === 'checklist' && <ListChecks className="h-3 w-3 shrink-0 text-indigo-500" />}
-          <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
+          {note.note_type === 'checklist' && <ListChecks className="h-3 w-3 shrink-0 text-primary" />}
+          <span className="text-sm font-medium text-foreground truncate">
             {note.title || 'Untitled'}
           </span>
         </div>
 
         {/* Preview */}
         {preview && note.subtask_count === 0 && (
-          <p className="text-xs text-zinc-500 dark:text-zinc-500 line-clamp-1 mt-0.5">
+          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
             {preview}
           </p>
         )}
@@ -183,10 +183,10 @@ function SortableNoteCard({ note, showFolder }: { note: NoteResponse; showFolder
 
         {/* Metadata row: date, folder, due, tags */}
         <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-          <span className="text-[10px] text-zinc-400">{formatDate(note.updated_at)}</span>
+          <span className="text-[10px] text-muted-foreground">{formatDate(note.updated_at)}</span>
 
           {showFolder && note.folder_id && (
-            <span className="inline-flex items-center gap-0.5 text-[10px] text-zinc-400">
+            <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
               <FolderIcon className="h-2.5 w-2.5" />
               <span className="truncate max-w-[60px]">folder</span>
             </span>
@@ -197,7 +197,7 @@ function SortableNoteCard({ note, showFolder }: { note: NoteResponse; showFolder
               'inline-flex items-center gap-0.5 text-[10px] font-medium rounded px-1 py-px',
               isPastDue
                 ? 'bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400'
-                : 'bg-blue-100 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400'
+                : 'bg-primary/10 text-primary'
             )}>
               <CalendarClock className="h-2.5 w-2.5" />
               {formatDue(note.due_at)}
@@ -213,7 +213,7 @@ function SortableNoteCard({ note, showFolder }: { note: NoteResponse; showFolder
                 'inline-flex items-center gap-0.5 text-[10px] font-medium rounded px-1 py-px',
                 isComplete
                   ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400'
-                  : 'bg-indigo-100 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400'
+                  : 'bg-primary/10 text-primary'
               )}>
                 <ListChecks className="h-2.5 w-2.5" />
                 {done}/{total}
@@ -275,7 +275,7 @@ export function NoteList() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-32 text-zinc-400 text-sm">
+      <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
         Loading...
       </div>
     );
@@ -283,7 +283,7 @@ export function NoteList() {
 
   if (notes.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-zinc-400 gap-1.5 px-4">
+      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-1.5 px-4">
         <FileText className="h-6 w-6 stroke-1" />
         <p className="text-xs">No notes yet</p>
       </div>

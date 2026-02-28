@@ -153,7 +153,7 @@ function NoteCardContent({ note, isDragging }: { note: NoteResponse; isDragging?
             'inline-flex items-center gap-0.5 text-[10px] font-medium rounded-full px-1.5 py-px',
             isPastDue
               ? 'bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400'
-              : 'bg-blue-100 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400'
+              : 'bg-primary/10 text-primary'
           )}>
             <CalendarClock className="h-2.5 w-2.5" />
             {formatDate(note.due_at)}

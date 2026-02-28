@@ -59,8 +59,8 @@ function DayCell({
   return (
     <div
       className={cn(
-        'group flex flex-col border-r border-b border-zinc-200 dark:border-zinc-800 min-h-[100px] p-1 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900/50',
-        !inMonth && 'bg-zinc-50/50 dark:bg-zinc-950/50'
+        'group flex flex-col border-r border-b border-border min-h-[100px] p-1 transition-colors hover:bg-muted/50',
+        !inMonth && 'bg-muted/50'
       )}
     >
       {/* Day number header */}
@@ -68,9 +68,9 @@ function DayCell({
         <span
           className={cn(
             'inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium',
-            isToday && 'bg-blue-500 text-white',
-            !isToday && inMonth && 'text-zinc-700 dark:text-zinc-300',
-            !isToday && !inMonth && 'text-zinc-400 dark:text-zinc-600'
+            isToday && 'bg-primary text-primary-foreground',
+            !isToday && inMonth && 'text-foreground',
+            !isToday && !inMonth && 'text-muted-foreground/50'
           )}
         >
           {date.getDate()}
@@ -97,8 +97,8 @@ function DayCell({
             className={cn(
               'w-full text-left rounded px-1 py-0.5 text-[11px] leading-tight truncate transition-colors',
               note.is_daily
-                ? 'bg-blue-500/10 text-blue-700 dark:text-blue-400 hover:bg-blue-500/20'
-                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                ? 'bg-primary/10 text-primary hover:bg-primary/20'
+                : 'bg-muted text-foreground hover:bg-muted/80'
             )}
             onClick={(e) => {
               e.stopPropagation();
@@ -110,7 +110,7 @@ function DayCell({
           </button>
         ))}
         {notes.length > 3 && (
-          <span className="block text-[10px] text-zinc-400 px-1">
+          <span className="block text-[10px] text-muted-foreground px-1">
             +{notes.length - 3} more
           </span>
         )}
@@ -212,13 +212,13 @@ export function CalendarView() {
   return (
     <div className="flex h-full flex-col">
       {/* Calendar header */}
-      <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-4 py-2">
+      <div className="flex items-center justify-between border-b border-border px-4 py-2">
         <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+          <h2 className="text-lg font-semibold text-foreground">
             {monthLabel}
           </h2>
           {loading && (
-            <span className="text-xs text-zinc-400">Loading...</span>
+            <span className="text-xs text-muted-foreground">Loading...</span>
           )}
         </div>
         <div className="flex items-center gap-1">
@@ -235,11 +235,11 @@ export function CalendarView() {
       </div>
 
       {/* Weekday headers */}
-      <div className="grid grid-cols-7 border-b border-zinc-200 dark:border-zinc-800">
+      <div className="grid grid-cols-7 border-b border-border">
         {WEEKDAYS.map((day) => (
           <div
             key={day}
-            className="py-1.5 text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 border-r border-zinc-200 dark:border-zinc-800 last:border-r-0"
+            className="py-1.5 text-center text-xs font-medium text-muted-foreground border-r border-border last:border-r-0"
           >
             {day}
           </div>

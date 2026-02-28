@@ -14,7 +14,7 @@ import { useNotesStore } from '@/stores/notes-store';
 import { useUIStore } from '@/stores/ui-store';
 
 const EDGE_STYLES: Record<string, { stroke: string; strokeDasharray?: string }> = {
-  link: { stroke: '#6366f1' },
+  link: { stroke: '#0F766E' },
   tag: { stroke: '#f59e0b', strokeDasharray: '5 5' },
   folder: { stroke: '#64748b', strokeDasharray: '2 4' },
 };
@@ -42,9 +42,9 @@ export function GraphView() {
           position: { x: (i % cols) * gapX, y: Math.floor(i / cols) * gapY },
           data: { label: n.title || 'Untitled' },
           style: {
-            background: isDark ? '#27272a' : '#ffffff',
-            color: isDark ? '#e4e4e7' : '#18181b',
-            border: `1px solid ${isDark ? '#3f3f46' : '#d4d4d8'}`,
+            background: isDark ? '#1E293B' : '#ffffff',
+            color: isDark ? '#F1F5F9' : '#0F172A',
+            border: `1px solid ${isDark ? '#334155' : '#E2E8F0'}`,
             borderRadius: '8px',
             padding: '6px 12px',
             fontSize: '12px',
@@ -78,7 +78,7 @@ export function GraphView() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center text-zinc-400 text-sm">
+      <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
         Loading graph...
       </div>
     );
@@ -86,7 +86,7 @@ export function GraphView() {
 
   if (nodes.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center text-zinc-400 text-sm">
+      <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
         No notes to display. Create some notes first.
       </div>
     );
@@ -108,9 +108,9 @@ export function GraphView() {
         <Controls />
       </ReactFlow>
       {/* Legend */}
-      <div className="absolute bottom-4 left-4 flex gap-4 rounded-md bg-white/90 dark:bg-zinc-900/90 px-3 py-2 text-xs text-zinc-600 dark:text-zinc-400 shadow-sm border border-zinc-200 dark:border-zinc-800">
+      <div className="absolute bottom-4 left-4 flex gap-4 rounded-md bg-background/90 px-3 py-2 text-xs text-muted-foreground shadow-sm border border-border">
         <div className="flex items-center gap-1">
-          <span className="inline-block h-0.5 w-4 bg-indigo-500" />
+          <span className="inline-block h-0.5 w-4 bg-primary" />
           Wiki-link
         </div>
         <div className="flex items-center gap-1">

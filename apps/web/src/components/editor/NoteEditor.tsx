@@ -300,7 +300,7 @@ export function NoteEditor() {
               <Button
                 variant="ghost"
                 size="icon"
-                className={`h-8 w-8 shrink-0 ${note.due_at ? (isPastDue ? 'text-red-500' : 'text-blue-500') : ''}`}
+                className={`h-8 w-8 shrink-0 ${note.due_at ? (isPastDue ? 'text-destructive' : 'text-primary') : ''}`}
                 title={note.due_at ? `Due: ${formatDueAt(note.due_at)}` : 'Set due date'}
               >
                 <CalendarClock className="h-4 w-4" />
@@ -342,7 +342,7 @@ export function NoteEditor() {
               <Button
                 variant="ghost"
                 size="icon"
-                className={`h-8 w-8 shrink-0 ${note.tags.length > 0 ? 'text-indigo-500' : ''}`}
+                className={`h-8 w-8 shrink-0 ${note.tags.length > 0 ? 'text-primary' : ''}`}
                 title="Tags"
               >
                 <Tag className="h-4 w-4" />
@@ -373,7 +373,7 @@ export function NoteEditor() {
                       style={{ backgroundColor: tag.color }}
                     />
                     <span className="truncate">{tag.name}</span>
-                    {hasTag && <Check className="h-3 w-3 ml-auto text-indigo-500" />}
+                    {hasTag && <Check className="h-3 w-3 ml-auto text-primary" />}
                   </button>
                 );
               })}
@@ -437,7 +437,7 @@ export function NoteEditor() {
         {/* Due date indicator bar */}
         {note.due_at && (
           <div className={`flex items-center gap-2 px-4 py-1 text-xs border-b ${
-            isPastDue ? 'bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400' : 'bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400'
+            isPastDue ? 'bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400' : 'bg-primary/10 text-primary'
           }`}>
             <CalendarClock className="h-3 w-3" />
             <span>Due {formatDueAt(note.due_at)}</span>

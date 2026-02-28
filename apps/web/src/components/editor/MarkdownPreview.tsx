@@ -29,7 +29,7 @@ export function MarkdownPreview({ content, className, onCheckboxToggle }: Markdo
   let checkboxCount = -1;
 
   return (
-    <div className={`prose prose-zinc dark:prose-invert max-w-none p-4 ${className ?? ''}`}>
+    <div className={`prose prose-slate dark:prose-invert max-w-none p-4 ${className ?? ''}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
@@ -46,7 +46,7 @@ export function MarkdownPreview({ content, className, onCheckboxToggle }: Markdo
                       onCheckboxToggle(toggleNthCheckbox(content, idx));
                     }
                   }}
-                  className="cursor-pointer mr-1 accent-indigo-500"
+                  className="cursor-pointer mr-1 accent-primary"
                   {...props}
                 />
               );
@@ -62,7 +62,7 @@ export function MarkdownPreview({ content, className, onCheckboxToggle }: Markdo
               return (
                 <a
                   {...props}
-                  className="cursor-pointer text-indigo-500 hover:text-indigo-600 no-underline hover:underline"
+                  className="cursor-pointer text-primary hover:text-primary/80 no-underline hover:underline"
                   onClick={(e) => {
                     e.preventDefault();
                     if (target) setActiveNote(target.id);

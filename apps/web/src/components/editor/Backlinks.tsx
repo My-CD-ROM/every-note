@@ -20,9 +20,9 @@ export function Backlinks({ noteId }: BacklinksProps) {
   if (backlinks.length === 0) return null;
 
   return (
-    <div className="border-t border-zinc-200 dark:border-zinc-800 px-4 py-2">
+    <div className="border-t border-border px-4 py-2">
       <button
-        className="flex items-center gap-1 text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+        className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
         onClick={() => setExpanded(!expanded)}
       >
         <ChevronRight className={`h-3 w-3 transition-transform ${expanded ? 'rotate-90' : ''}`} />
@@ -34,7 +34,7 @@ export function Backlinks({ noteId }: BacklinksProps) {
           {backlinks.map((bl) => (
             <button
               key={bl.id}
-              className="flex items-center gap-2 rounded px-2 py-1 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              className="flex items-center gap-2 rounded px-2 py-1 text-sm text-foreground hover:bg-muted"
               onClick={() => setActiveNote(bl.id)}
             >
               <span className="truncate">{bl.title || 'Untitled'}</span>

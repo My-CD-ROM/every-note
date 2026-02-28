@@ -87,7 +87,7 @@ function SortableChecklistItem({
         type="checkbox"
         checked={item.checked}
         onChange={() => onToggle(item.id)}
-        className="h-4 w-4 shrink-0 rounded border-zinc-300 dark:border-zinc-600 accent-indigo-500 cursor-pointer"
+        className="h-4 w-4 shrink-0 rounded border-border accent-primary cursor-pointer"
       />
 
       <input
@@ -249,7 +249,7 @@ export function ChecklistEditor({ value, onChange }: ChecklistEditorProps) {
             <div
               className={cn(
                 'h-full rounded-full transition-all duration-300',
-                done === total ? 'bg-emerald-500' : 'bg-indigo-500'
+                done === total ? 'bg-emerald-500' : 'bg-primary'
               )}
               style={{ width: `${pct}%` }}
             />

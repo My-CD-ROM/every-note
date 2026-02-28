@@ -56,7 +56,7 @@ export const notesApi = {
   get(id: string) {
     return request<NoteResponse>(`/notes/${id}`);
   },
-  create(data: { title?: string; content?: string; folder_id?: string | null; note_type?: string }) {
+  create(data: { title?: string; content?: string; folder_id?: string | null; note_type?: string; parent_id?: string | null }) {
     return request<NoteResponse>('/notes', { method: 'POST', body: JSON.stringify(data) });
   },
   update(id: string, data: { title?: string; content?: string; folder_id?: string | null; position?: number; is_pinned?: boolean; due_at?: string | null; note_type?: string }) {
@@ -88,6 +88,9 @@ export const notesApi = {
   },
   restoreVersion(noteId: string, versionId: string) {
     return request<NoteResponse>(`/notes/${noteId}/versions/${versionId}/restore`, { method: 'POST' });
+  },
+  listSubtasks(noteId: string) {
+    return request<NoteResponse[]>(`/notes/${noteId}/subtasks`);
   },
   backlinks(noteId: string) {
     return request<BacklinkResponse[]>(`/notes/${noteId}/backlinks`);

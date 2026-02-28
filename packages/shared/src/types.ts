@@ -19,9 +19,12 @@ export interface NoteResponse {
   is_daily: boolean;
   daily_date: string | null;
   due_at: string | null;
+  parent_id: string | null;
   created_at: string;
   updated_at: string;
   tags: TagBrief[];
+  subtask_count: number;
+  subtask_completed: number;
 }
 
 export interface FolderResponse {

@@ -9,7 +9,7 @@ interface NotesState {
 
   fetchNotes: (params?: { folder_id?: string; tag_id?: string; trashed?: boolean; pinned?: boolean; completed?: boolean }) => Promise<void>;
   setActiveNote: (id: string | null) => void;
-  createNote: (data: { title?: string; content?: string; folder_id?: string | null; note_type?: string }) => Promise<NoteResponse>;
+  createNote: (data: { title?: string; content?: string; folder_id?: string | null; note_type?: string; parent_id?: string | null }) => Promise<NoteResponse>;
   updateNote: (id: string, data: { title?: string; content?: string; folder_id?: string | null; is_pinned?: boolean; due_at?: string | null; note_type?: string }) => Promise<void>;
   deleteNote: (id: string, permanent?: boolean) => Promise<void>;
   restoreNote: (id: string) => Promise<void>;

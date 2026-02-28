@@ -43,8 +43,8 @@ export function GraphView() {
           data: { label: n.title || 'Untitled' },
           style: {
             background: isDark ? '#1E293B' : '#ffffff',
-            color: isDark ? '#F1F5F9' : '#0F172A',
-            border: `1px solid ${isDark ? '#334155' : '#E2E8F0'}`,
+            color: isDark ? '#F1F5F9' : '#202124',
+            border: `1px solid ${isDark ? '#334155' : '#DADCE0'}`,
             borderRadius: '8px',
             padding: '6px 12px',
             fontSize: '12px',

@@ -6,13 +6,13 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --radius-sm: 5px;
+  --radius-sm: 4px;
   --radius-md: 8px;
-  --radius-lg: 10px;
-  --radius-xl: 14px;
-  --radius-2xl: 18px;
-  --radius-3xl: 22px;
-  --radius-4xl: 26px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 24px;
+  --radius-4xl: 28px;
   --font-sans: 'DM Sans', system-ui, sans-serif;
   --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
   --color-background: var(--background);
@@ -49,39 +49,39 @@
 }
 
 :root {
-  --radius: 10px;
-  /* Primary — Teal */
+  --radius: 8px;
+  /* Primary — Teal, Neutrals — Google-style warm grays */
   --background: #FFFFFF;
-  --foreground: #0F172A;
+  --foreground: #202124;
   --card: #FFFFFF;
-  --card-foreground: #0F172A;
+  --card-foreground: #202124;
   --popover: #FFFFFF;
-  --popover-foreground: #0F172A;
+  --popover-foreground: #202124;
   --primary: #0F766E;
   --primary-foreground: #FFFFFF;
-  --secondary: #F8FAFC;
-  --secondary-foreground: #0F172A;
-  --muted: #F1F5F9;
-  --muted-foreground: #64748B;
-  --accent: #F1F5F9;
-  --accent-foreground: #0F172A;
-  --destructive: #EF4444;
-  --border: #E2E8F0;
-  --input: #E2E8F0;
+  --secondary: #F8F9FA;
+  --secondary-foreground: #202124;
+  --muted: #F1F3F4;
+  --muted-foreground: #5F6368;
+  --accent: #E8F0FE;
+  --accent-foreground: #202124;
+  --destructive: #EA4335;
+  --border: #DADCE0;
+  --input: #DADCE0;
   --ring: #0F766E;
   --chart-1: #0F766E;
   --chart-2: #F59E0B;
   --chart-3: #22C55E;
-  --chart-4: #EF4444;
+  --chart-4: #EA4335;
   --chart-5: #8B5CF6;
   /* Sidebar */
-  --sidebar: #F8FAFC;
-  --sidebar-foreground: #0F172A;
+  --sidebar: #F8F9FA;
+  --sidebar-foreground: #3C4043;
   --sidebar-primary: #0F766E;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #F1F5F9;
-  --sidebar-accent-foreground: #0F172A;
-  --sidebar-border: #E2E8F0;
+  --sidebar-accent: #E8F0FE;
+  --sidebar-accent-foreground: #202124;
+  --sidebar-border: #DADCE0;
   --sidebar-ring: #0F766E;
 }
 

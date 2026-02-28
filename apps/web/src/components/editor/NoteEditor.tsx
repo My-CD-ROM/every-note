@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CalendarClock, Check, CheckCircle2, ChevronRight, Download, FileText, History, ListChecks, Loader2, Star, Tag, Trash2, Undo2, X } from 'lucide-react';
+import { CalendarClock, Check, CheckCircle2, ChevronRight, Download, FileText, History, ListChecks, Loader2, MoreHorizontal, Star, Tag, Trash2, Undo2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Calendar } from '@/components/ui/calendar';
 import { MarkdownEditor, type MarkdownEditorHandle } from './MarkdownEditor';
 import { ChecklistEditor } from './ChecklistEditor';
@@ -64,6 +65,7 @@ export function NoteEditor() {
   const [saving, setSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [selectionCoords, setSelectionCoords] = useState<{ top: number; left: number; bottom: number; right: number } | null>(null);
   const editorRef = useRef<MarkdownEditorHandle>(null);
 
   // Due date state
@@ -292,16 +294,6 @@ export function NoteEditor() {
           >
             <Star className={`h-4 w-4 ${note.is_pinned ? 'fill-amber-400 text-amber-400' : ''}`} />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 shrink-0"
-            onClick={() => setShowHistory(!showHistory)}
-            title="Version history"
-          >
-            <History className="h-4 w-4" />
-          </Button>
-
           {/* Due date */}
           <Popover open={duePopoverOpen} onOpenChange={setDuePopoverOpen}>
             <PopoverTrigger asChild>
@@ -388,43 +380,43 @@ export function NoteEditor() {
             </PopoverContent>
           </Popover>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 shrink-0"
-            onClick={() => {
-              const newType = note.note_type === 'checklist' ? 'note' : 'checklist';
-              updateNote(note.id, { note_type: newType });
-            }}
-            title={note.note_type === 'checklist' ? 'Convert to note' : 'Convert to checklist'}
-          >
-            {note.note_type === 'checklist' ? <FileText className="h-4 w-4" /> : <ListChecks className="h-4 w-4" />}
-          </Button>
-          {!note.is_completed && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 shrink-0"
-              onClick={() => completeNote(note.id)}
-              title="Mark complete"
-            >
-              <CheckCircle2 className="h-4 w-4" />
-            </Button>
-          )}
-          <a href={exportApi.noteUrl(note.id)} download>
-            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" title="Export as .md">
-              <Download className="h-4 w-4" />
-            </Button>
-          </a>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 shrink-0 text-red-500 hover:text-red-600"
-            onClick={() => deleteNote(note.id)}
-            title="Move to trash"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setShowHistory(!showHistory)}>
+                <History className="h-4 w-4 mr-2" />
+                Version history
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                const newType = note.note_type === 'checklist' ? 'note' : 'checklist';
+                updateNote(note.id, { note_type: newType });
+              }}>
+                {note.note_type === 'checklist' ? <FileText className="h-4 w-4 mr-2" /> : <ListChecks className="h-4 w-4 mr-2" />}
+                {note.note_type === 'checklist' ? 'Convert to note' : 'Convert to checklist'}
+              </DropdownMenuItem>
+              {!note.is_completed && (
+                <DropdownMenuItem onClick={() => completeNote(note.id)}>
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Mark complete
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem asChild>
+                <a href={exportApi.noteUrl(note.id)} download>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export as .md
+                </a>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-red-500 focus:text-red-500" onClick={() => deleteNote(note.id)}>
+                <Trash2 className="h-4 w-4 mr-2" />
+                Move to trash
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Completed indicator bar */}
@@ -474,8 +466,10 @@ export function NoteEditor() {
           </div>
         )}
 
-        {/* Formatting toolbar (hidden for checklists) */}
-        {note.note_type !== 'checklist' && <FormatToolbar editorRef={editorRef} />}
+        {/* Floating format toolbar (appears on text selection) */}
+        {note.note_type !== 'checklist' && selectionCoords && (
+          <FormatToolbar editorRef={editorRef} coords={selectionCoords} />
+        )}
 
         {/* Editor / Preview */}
         <div className="flex flex-1 overflow-hidden">
@@ -489,6 +483,7 @@ export function NoteEditor() {
                 ref={editorRef}
                 value={content}
                 onChange={handleContentChange}
+                onSelectionChange={setSelectionCoords}
                 className="h-full"
               />
             </div>

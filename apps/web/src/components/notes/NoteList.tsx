@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { CalendarClock, FileText, FolderIcon, GripVertical, ListChecks, Star } from 'lucide-react';
+import { CalendarClock, FileText, FolderIcon, GripVertical, ListChecks, ListTodo, Star } from 'lucide-react';
 import { checklistProgressFromContent } from '@/lib/checklist';
 import {
   DndContext,
@@ -141,6 +141,18 @@ function SortableNoteCard({ note, showFolder }: { note: NoteResponse; showFolder
               </span>
             );
           })()}
+
+          {note.subtask_count > 0 && (
+            <span className={cn(
+              'inline-flex items-center gap-0.5 text-[10px] font-medium rounded px-1 py-px',
+              note.subtask_completed === note.subtask_count
+                ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400'
+                : 'bg-violet-100 text-violet-600 dark:bg-violet-950/40 dark:text-violet-400'
+            )}>
+              <ListTodo className="h-2.5 w-2.5" />
+              {note.subtask_completed}/{note.subtask_count}
+            </span>
+          )}
 
           {note.tags.map((tag) => (
             <span

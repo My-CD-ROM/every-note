@@ -59,7 +59,7 @@ export const notesApi = {
   create(data: { title?: string; content?: string; folder_id?: string | null; note_type?: string; parent_id?: string | null }) {
     return request<NoteResponse>('/notes', { method: 'POST', body: JSON.stringify(data) });
   },
-  update(id: string, data: { title?: string; content?: string; folder_id?: string | null; position?: number; is_pinned?: boolean; due_at?: string | null; note_type?: string }) {
+  update(id: string, data: { title?: string; content?: string; folder_id?: string | null; position?: number; is_pinned?: boolean; due_at?: string | null; note_type?: string; parent_id?: string | null }) {
     return request<NoteResponse>(`/notes/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
   },
   delete(id: string, permanent = false) {

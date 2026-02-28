@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FileText, Folder } from 'lucide-react';
+import { CornerDownRight, FileText, Folder } from 'lucide-react';
 import {
   CommandDialog,
   CommandEmpty,
@@ -60,7 +60,13 @@ export function SearchPalette() {
               <span className="text-xs text-muted-foreground truncate">
                 {r.snippet.replace(/<[^>]*>/g, '')}
               </span>
-              {r.folder_name && (
+              {r.parent_title && (
+                <span className="flex items-center gap-1 text-xs text-muted-foreground/60">
+                  <CornerDownRight className="h-3 w-3" />
+                  subtask of {r.parent_title}
+                </span>
+              )}
+              {r.folder_name && !r.parent_title && (
                 <span className="flex items-center gap-1 text-xs text-muted-foreground/60">
                   <Folder className="h-3 w-3" />
                   {r.folder_name}

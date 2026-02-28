@@ -56,6 +56,8 @@ export interface SearchResult {
   snippet: string;
   folder_id: string | null;
   folder_name: string | null;
+  parent_id: string | null;
+  parent_title: string | null;
   rank: number;
 }
 

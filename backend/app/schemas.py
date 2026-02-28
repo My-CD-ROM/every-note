@@ -21,6 +21,7 @@ class NoteUpdate(BaseModel):
     due_at: Optional[str] = None
     note_type: Optional[str] = None
     is_completed: Optional[bool] = None
+    parent_id: Optional[str] = None
 
 
 class TagBrief(BaseModel):
@@ -113,6 +114,8 @@ class SearchResult(BaseModel):
     snippet: str
     folder_id: Optional[str]
     folder_name: Optional[str]
+    parent_id: Optional[str] = None
+    parent_title: Optional[str] = None
     rank: float
 
 

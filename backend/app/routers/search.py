@@ -29,22 +29,25 @@ def search_notes(q: str = Query(..., min_length=1), limit: int = Query(20, le=10
         return []
 
     with Session(engine) as session:
-        stmt = text("""
-            SELECT
-                n.id,
-                n.title,
-                snippet(notes_fts, 1, '<mark>', '</mark>', '...', 48) as snippet,
-                n.folder_id,
-                f.name as folder_name,
-                bm25(notes_fts, 10.0, 1.0) as rank
-            FROM notes_fts
-            JOIN notes n ON n.rowid = notes_fts.rowid
-            LEFT JOIN folders f ON f.id = n.folder_id
-            WHERE notes_fts MATCH :query
-              AND n.is_trashed = 0
-            ORDER BY bm25(notes_fts, 10.0, 1.0)
-            LIMIT :limit
-        """).bindparams(query=fts_query, limit=limit)
+        stmt = text(
+            "SELECT"
+            " n.id,"
+            " n.title,"
+            " snippet(notes_fts, 1, '<mark>', '</mark>', '...', 48) as snippet,"
+            " n.folder_id,"
+            " f.name as folder_name,"
+            " n.parent_id,"
+            " p.title as parent_title,"
+            " bm25(notes_fts, 10.0, 1.0) as rank"
+            " FROM notes_fts"
+            " JOIN notes n ON n.rowid = notes_fts.rowid"
+            " LEFT JOIN folders f ON f.id = n.folder_id"
+            " LEFT JOIN notes p ON p.id = n.parent_id"
+            " WHERE notes_fts MATCH :query"
+            " AND n.is_trashed = 0"
+            " ORDER BY bm25(notes_fts, 10.0, 1.0)"
+            " LIMIT :limit"
+        ).bindparams(query=fts_query, limit=limit)
         rows = session.exec(stmt).all()
 
         return [
@@ -54,7 +57,9 @@ def search_notes(q: str = Query(..., min_length=1), limit: int = Query(20, le=10
                 snippet=row[2],
                 folder_id=row[3],
                 folder_name=row[4],
-                rank=row[5],
+                parent_id=row[5],
+                parent_title=row[6],
+                rank=row[7],
             )
             for row in rows
         ]

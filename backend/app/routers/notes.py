@@ -2,6 +2,7 @@ import re
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
 from sqlmodel import Session, select
 
 from app.database import get_session
@@ -25,8 +26,6 @@ WIKILINK_RE = re.compile(r"\[\[([^\]]+)\]\]")
 
 def _subtask_counts(note_id: str, session: Session) -> tuple[int, int]:
     """Return (total, completed) subtask counts for a note."""
-    from sqlalchemy import func
-
     total = session.exec(
         select(func.count()).where(Note.parent_id == note_id)
     ).one()
@@ -122,18 +121,21 @@ def get_note(note_id: str, session: S):
 @router.post("", response_model=NoteResponse, status_code=201)
 def create_note(data: NoteCreate, session: S):
     # Enforce one-level nesting: subtasks cannot have subtasks
+    parent = None
     if data.parent_id:
         parent = session.get(Note, data.parent_id)
         if not parent:
             raise HTTPException(404, "Parent note not found")
         if parent.parent_id:
             raise HTTPException(400, "Cannot nest subtasks more than one level deep")
+        if parent.is_daily:
+            raise HTTPException(400, "Daily notes cannot have subtasks")
 
     note = Note(
         id=generate_ulid(),
         title=data.title,
         content=data.content,
-        folder_id=data.folder_id,
+        folder_id=parent.folder_id if parent else data.folder_id,
         note_type=data.note_type,
         parent_id=data.parent_id,
     )
@@ -152,6 +154,27 @@ def update_note(note_id: str, data: NoteUpdate, session: S):
         raise HTTPException(404, "Note not found")
 
     update_data = data.model_dump(exclude_unset=True)
+
+    # Validate parent_id changes (convert to subtask / promote to note)
+    if "parent_id" in update_data:
+        new_parent_id = update_data["parent_id"]
+        if new_parent_id is not None:
+            if new_parent_id == note_id:
+                raise HTTPException(400, "A note cannot be its own parent")
+            parent = session.get(Note, new_parent_id)
+            if not parent:
+                raise HTTPException(404, "Parent note not found")
+            if parent.parent_id:
+                raise HTTPException(400, "Cannot nest subtasks more than one level deep")
+            if note.is_daily:
+                raise HTTPException(400, "Daily notes cannot be subtasks")
+            # Check note doesn't have its own subtasks
+            sub_count = session.exec(
+                select(func.count()).where(Note.parent_id == note_id)
+            ).one()
+            if sub_count > 0:
+                raise HTTPException(400, "Notes with subtasks cannot become subtasks")
+
     content_or_title_changed = "title" in update_data or "content" in update_data
 
     # Snapshot previous state before applying changes (version history)

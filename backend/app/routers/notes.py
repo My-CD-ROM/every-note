@@ -81,6 +81,7 @@ def list_notes(
     pinned: Optional[bool] = None,
     completed: Optional[bool] = None,
     parent_id: Optional[str] = None,
+    status: Optional[str] = None,
 ):
     query = select(Note).where(Note.is_trashed == trashed)
 
@@ -104,6 +105,12 @@ def list_notes(
 
     if pinned is True:
         query = query.where(Note.is_pinned == True)  # noqa: E712
+
+    if status is not None:
+        if status == "none":
+            query = query.where(Note.status == None)  # noqa: E711
+        else:
+            query = query.where(Note.status == status)
 
     query = query.order_by(Note.is_pinned.desc(), Note.updated_at.desc())  # type: ignore[union-attr]
     notes = session.exec(query).all()
@@ -138,6 +145,7 @@ def create_note(data: NoteCreate, session: S):
         folder_id=parent.folder_id if parent else data.folder_id,
         note_type=data.note_type,
         parent_id=data.parent_id,
+        status=data.status,
     )
     session.add(note)
     session.flush()
@@ -258,6 +266,8 @@ def complete_note(note_id: str, session: S):
 
     note.is_completed = True
     note.completed_at = utc_now()
+    if note.status:
+        note.status = "done"
     session.add(note)
     session.commit()
     session.refresh(note)
@@ -272,6 +282,22 @@ def uncomplete_note(note_id: str, session: S):
 
     note.is_completed = False
     note.completed_at = None
+    if note.status == "done":
+        note.status = "todo"
+    session.add(note)
+    session.commit()
+    session.refresh(note)
+    return _note_response(note, session)
+
+
+@router.patch("/{note_id}/status", response_model=NoteResponse)
+def update_status(note_id: str, data: dict, session: S):
+    note = session.get(Note, note_id)
+    if not note:
+        raise HTTPException(404, "Note not found")
+
+    note.status = data.get("status")
+    note.updated_at = utc_now()
     session.add(note)
     session.commit()
     session.refresh(note)

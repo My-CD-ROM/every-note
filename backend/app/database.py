@@ -94,6 +94,7 @@ def init_db():
         ("notes", "is_completed", "ALTER TABLE notes ADD COLUMN is_completed INTEGER NOT NULL DEFAULT 0"),
         ("notes", "completed_at", "ALTER TABLE notes ADD COLUMN completed_at TEXT"),
         ("notes", "parent_id", "ALTER TABLE notes ADD COLUMN parent_id TEXT REFERENCES notes(id) ON DELETE CASCADE"),
+        ("notes", "status", "ALTER TABLE notes ADD COLUMN status TEXT DEFAULT NULL"),
     ]
     for table, column, sql in migrations:
         try:

@@ -10,6 +10,7 @@ class NoteCreate(BaseModel):
     folder_id: Optional[str] = None
     note_type: str = "note"
     parent_id: Optional[str] = None
+    status: Optional[str] = None
 
 
 class NoteUpdate(BaseModel):
@@ -22,6 +23,7 @@ class NoteUpdate(BaseModel):
     note_type: Optional[str] = None
     is_completed: Optional[bool] = None
     parent_id: Optional[str] = None
+    status: Optional[str] = None
 
 
 class TagBrief(BaseModel):
@@ -46,6 +48,7 @@ class NoteResponse(BaseModel):
     daily_date: Optional[str]
     due_at: Optional[str]
     parent_id: Optional[str]
+    status: Optional[str]
     created_at: str
     updated_at: str
     tags: list[TagBrief] = []

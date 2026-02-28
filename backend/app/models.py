@@ -65,6 +65,7 @@ class Note(SQLModel, table=True):
     daily_date: Optional[str] = Field(default=None)
     due_at: Optional[str] = Field(default=None)
     parent_id: Optional[str] = Field(default=None, foreign_key="notes.id")
+    status: Optional[str] = Field(default=None)
     created_at: str = Field(default_factory=utc_now)
     updated_at: str = Field(default_factory=utc_now)
 

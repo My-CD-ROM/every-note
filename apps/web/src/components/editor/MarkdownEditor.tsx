@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useRef } from 'react';
+import { forwardRef, useImperativeHandle, useMemo, useRef } from 'react';
 import CodeMirror, { type ReactCodeMirrorRef } from '@uiw/react-codemirror';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { languages } from '@codemirror/language-data';
@@ -9,6 +9,7 @@ interface MarkdownEditorProps {
   value: string;
   onChange: (value: string) => void;
   className?: string;
+  onSelectionChange?: (coords: { top: number; left: number; bottom: number; right: number } | null) => void;
 }
 
 export interface MarkdownEditorHandle {
@@ -146,9 +147,34 @@ const editorTheme = EditorView.theme({
 // --- Component ---
 
 export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(
-  function MarkdownEditor({ value, onChange, className }, ref) {
+  function MarkdownEditor({ value, onChange, className, onSelectionChange }, ref) {
     const theme = useUIStore((s) => s.theme);
     const cmRef = useRef<ReactCodeMirrorRef>(null);
+
+    const onSelChangeRef = useRef(onSelectionChange);
+    onSelChangeRef.current = onSelectionChange;
+
+    const selectionExtension = useMemo(() =>
+      EditorView.updateListener.of((update) => {
+        if (!update.selectionSet && !update.docChanged && !update.focusChanged) return;
+        const { from, to } = update.view.state.selection.main;
+        if (from !== to && update.view.hasFocus) {
+          const start = update.view.coordsAtPos(from);
+          const end = update.view.coordsAtPos(to);
+          if (start && end) {
+            onSelChangeRef.current?.({
+              top: Math.min(start.top, end.top),
+              left: Math.min(start.left, end.left),
+              bottom: Math.max(start.bottom, end.bottom),
+              right: Math.max(start.right, end.right),
+            });
+            return;
+          }
+        }
+        onSelChangeRef.current?.(null);
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []);
 
     useImperativeHandle(ref, () => ({
       focus() {
@@ -189,6 +215,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
           editorTheme,
           checkboxPlugin,
           checklistKeymap,
+          selectionExtension,
         ]}
         className={className}
         basicSetup={{

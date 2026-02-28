@@ -90,47 +90,60 @@ export function SubtaskList({ noteId, onOpenSubtask }: SubtaskListProps) {
 
       {!collapsed && (
         <div className="px-4 pb-3 space-y-1">
-          {subtasks.map((subtask) => (
-            <div
-              key={subtask.id}
-              className="group flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50 transition-colors"
-            >
-              <GripVertical className="h-3.5 w-3.5 text-muted-foreground/30 opacity-0 group-hover:opacity-100 cursor-grab shrink-0" />
-              <button
-                onClick={() => toggleComplete(subtask)}
-                className={`h-4 w-4 rounded border shrink-0 flex items-center justify-center transition-colors ${
-                  subtask.is_completed
-                    ? 'bg-emerald-500 border-emerald-500 text-white'
-                    : 'border-muted-foreground/30 hover:border-muted-foreground/60'
-                }`}
+          {subtasks.map((subtask) => {
+            const descPreview = subtask.content.slice(0, 120).replace(/[#*`>\-\[\]]/g, '').trim();
+            return (
+              <div
+                key={subtask.id}
+                className="group rounded-md px-2 py-1.5 hover:bg-muted/50 transition-colors"
               >
-                {subtask.is_completed && <Check className="h-3 w-3" />}
-              </button>
-              <button
-                onClick={() => onOpenSubtask(subtask.id)}
-                className={`flex-1 text-left text-sm truncate hover:underline ${
-                  subtask.is_completed ? 'line-through text-muted-foreground' : ''
-                }`}
-              >
-                {subtask.title || 'Untitled'}
-              </button>
-              {subtask.due_at && (
-                <span className={`text-[10px] shrink-0 ${
-                  new Date(subtask.due_at) < new Date() ? 'text-red-500' : 'text-muted-foreground'
-                }`}>
-                  {new Date(subtask.due_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                </span>
-              )}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-600"
-                onClick={() => handleDelete(subtask.id)}
-              >
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            </div>
-          ))}
+                <div className="flex items-center gap-2">
+                  <GripVertical className="h-3.5 w-3.5 text-muted-foreground/30 opacity-0 group-hover:opacity-100 cursor-grab shrink-0" />
+                  <button
+                    onClick={() => toggleComplete(subtask)}
+                    className={`h-4 w-4 rounded border shrink-0 flex items-center justify-center transition-colors ${
+                      subtask.is_completed
+                        ? 'bg-emerald-500 border-emerald-500 text-white'
+                        : 'border-muted-foreground/30 hover:border-muted-foreground/60'
+                    }`}
+                  >
+                    {subtask.is_completed && <Check className="h-3 w-3" />}
+                  </button>
+                  <button
+                    onClick={() => onOpenSubtask(subtask.id)}
+                    className={`flex-1 text-left text-sm truncate hover:underline ${
+                      subtask.is_completed ? 'line-through text-muted-foreground' : ''
+                    }`}
+                  >
+                    {subtask.title || 'Untitled'}
+                  </button>
+                  {subtask.due_at && (
+                    <span className={`text-[10px] shrink-0 ${
+                      new Date(subtask.due_at) < new Date() ? 'text-red-500' : 'text-muted-foreground'
+                    }`}>
+                      {new Date(subtask.due_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </span>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-600"
+                    onClick={() => handleDelete(subtask.id)}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+                {descPreview && (
+                  <p
+                    className="text-xs text-muted-foreground/60 line-clamp-2 mt-0.5 ml-[3.25rem] cursor-pointer hover:text-muted-foreground transition-colors"
+                    onClick={() => onOpenSubtask(subtask.id)}
+                  >
+                    {descPreview}
+                  </p>
+                )}
+              </div>
+            );
+          })}
 
           {/* Add subtask input */}
           <div className="flex items-center gap-2 px-2 pt-1">

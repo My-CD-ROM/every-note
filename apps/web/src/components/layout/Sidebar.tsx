@@ -6,6 +6,7 @@ import {
   Download,
   FileText,
   FolderIcon,
+  LayoutDashboard,
   Network,
   Plus,
   Search,
@@ -249,6 +250,7 @@ export function Sidebar() {
         {/* Navigation */}
         <div className="space-y-0.5">
           <NavItem icon={FileText} label="All Notes" active={view === 'all'} onClick={() => nav('all')} />
+          <NavItem icon={LayoutDashboard} label="Board" active={view === 'board'} iconColor="#0F766E" onClick={() => nav('board')} />
           <NavItem icon={Star} label="Favorites" active={view === 'favorites'} iconColor="#f59e0b" onClick={() => nav('favorites', { pinned: true })} />
           <NavItem icon={CalendarDays} label="Calendar" active={view === 'daily'} iconColor="#3b82f6" onClick={() => { setActiveFolder(null); setActiveTag(null); setActiveNote(null); setView('daily'); }} />
           <NavItem icon={Network} label="Graph View" active={view === 'graph'} iconColor="#6366f1" onClick={() => { setActiveFolder(null); setActiveTag(null); setView('graph'); setActiveNote(null); }} />

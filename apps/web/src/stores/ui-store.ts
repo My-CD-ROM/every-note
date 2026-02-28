@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 type Theme = 'light' | 'dark';
-type View = 'all' | 'folder' | 'tag' | 'trash' | 'favorites' | 'daily' | 'graph' | 'completed';
+type View = 'all' | 'folder' | 'tag' | 'trash' | 'favorites' | 'daily' | 'graph' | 'completed' | 'board';
 
 interface UIState {
   theme: Theme;

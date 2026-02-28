@@ -17,6 +17,7 @@ import { useFoldersStore } from '@/stores/folders-store';
 
 const VIEW_TITLES: Record<string, string> = {
   all: 'All Notes',
+  board: 'Board',
   trash: 'Trash',
   folder: 'Folder',
   tag: 'Tagged',
@@ -40,7 +41,7 @@ function TopBar() {
     });
   };
 
-  const showCreateButton = !['trash', 'all', 'graph', 'daily', 'completed'].includes(view);
+  const showCreateButton = !['trash', 'all', 'board', 'graph', 'daily', 'completed'].includes(view);
 
   return (
     <div className="flex items-center justify-between border-b px-3 py-1.5 bg-background shrink-0">
@@ -78,7 +79,7 @@ function NotesPage() {
   }, [fetchNotes]);
 
   // Views that use the list + editor two-panel layout
-  const isListView = ['folder', 'tag', 'trash', 'favorites', 'completed'].includes(view);
+  const isListView = ['all', 'folder', 'tag', 'trash', 'favorites', 'completed'].includes(view);
 
   return (
     <div className="flex h-full flex-col">
@@ -97,8 +98,8 @@ function NotesPage() {
         </div>
       )}
 
-      {/* Board view for All Notes */}
-      {view === 'all' && (
+      {/* Kanban board view */}
+      {view === 'board' && (
         <div className="flex flex-1 overflow-hidden">
           <div className="flex-1 overflow-x-auto bg-muted/30">
             <BoardView />
@@ -111,7 +112,7 @@ function NotesPage() {
         </div>
       )}
 
-      {/* List + editor layout for folder, tag, trash, favorites, todo */}
+      {/* List + editor layout for all, folder, tag, trash, favorites, etc. */}
       {isListView && (
         <div className="flex flex-1 overflow-hidden">
           <div className="w-64 flex-shrink-0 border-r flex flex-col bg-muted/20">

@@ -204,7 +204,7 @@ function SortableNoteCard({ note, showFolder }: { note: NoteResponse; showFolder
             </span>
           )}
 
-          {note.note_type === 'checklist' && (() => {
+          {note.note_type === 'checklist' && note.subtask_count === 0 && (() => {
             const { done, total } = checklistProgressFromContent(note.content);
             if (total === 0) return null;
             const isComplete = done === total;

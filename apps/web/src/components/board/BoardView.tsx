@@ -159,7 +159,7 @@ function NoteCardContent({ note, isDragging }: { note: NoteResponse; isDragging?
             {formatDate(note.due_at)}
           </span>
         )}
-        {totalCount > 0 && (
+        {totalCount > 0 && note.subtask_count === 0 && (
           <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground/70">
             <ListChecks className="h-2.5 w-2.5" />
             {doneCount}/{totalCount}

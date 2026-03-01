@@ -81,7 +81,7 @@ export function SubtaskList({ noteId, onOpenSubtask }: SubtaskListProps) {
         {totalCount > 0 && (
           <div className="flex-1 max-w-[120px] h-1.5 bg-muted rounded-full overflow-hidden">
             <div
-              className="h-full bg-emerald-500 rounded-full transition-all"
+              className="h-full bg-primary rounded-full transition-all"
               style={{ width: `${(completedCount / totalCount) * 100}%` }}
             />
           </div>
@@ -103,7 +103,7 @@ export function SubtaskList({ noteId, onOpenSubtask }: SubtaskListProps) {
                     onClick={() => toggleComplete(subtask)}
                     className={`h-4 w-4 rounded border shrink-0 flex items-center justify-center transition-colors ${
                       subtask.is_completed
-                        ? 'bg-emerald-500 border-emerald-500 text-white'
+                        ? 'bg-primary border-primary text-white'
                         : 'border-muted-foreground/30 hover:border-muted-foreground/60'
                     }`}
                   >

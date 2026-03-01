@@ -249,7 +249,7 @@ export function ChecklistEditor({ value, onChange }: ChecklistEditorProps) {
             <div
               className={cn(
                 'h-full rounded-full transition-all duration-300',
-                done === total ? 'bg-emerald-500' : 'bg-primary'
+                'bg-primary'
               )}
               style={{ width: `${pct}%` }}
             />

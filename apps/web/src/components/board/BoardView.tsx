@@ -69,7 +69,7 @@ function BoardInlineSubtasks({ noteId }: { noteId: string }) {
             className={cn(
               'h-3 w-3 rounded border shrink-0 flex items-center justify-center transition-colors',
               sub.is_completed
-                ? 'bg-emerald-500 border-emerald-500 text-white'
+                ? 'bg-primary border-primary text-white'
                 : 'border-muted-foreground/30 hover:border-muted-foreground/60'
             )}
           >
@@ -89,7 +89,7 @@ function BoardInlineSubtasks({ noteId }: { noteId: string }) {
       <div className="flex items-center gap-1.5 pt-0.5">
         <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
           <div
-            className="h-full bg-emerald-500 rounded-full transition-all"
+            className="h-full bg-primary rounded-full transition-all"
             style={{ width: `${(completedCount / subtasks.length) * 100}%` }}
           />
         </div>
@@ -129,10 +129,10 @@ function NoteCardContent({ note, isDragging }: { note: NoteResponse; isDragging?
         </span>
         <button
           onClick={(e) => { e.stopPropagation(); completeNote(note.id); }}
-          className="ml-auto opacity-0 group-hover/card:opacity-100 shrink-0 p-0.5 rounded hover:bg-emerald-100 dark:hover:bg-emerald-950/40 transition-all"
+          className="ml-auto opacity-0 group-hover/card:opacity-100 shrink-0 p-0.5 rounded hover:bg-primary/10 dark:hover:bg-primary/20 transition-all"
           title="Mark complete"
         >
-          <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground/50 hover:text-emerald-500" />
+          <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground/50 hover:text-primary" />
         </button>
       </div>
       {note.subtask_count > 0 ? (

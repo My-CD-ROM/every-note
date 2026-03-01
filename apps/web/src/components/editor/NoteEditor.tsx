@@ -326,7 +326,7 @@ export function NoteEditor() {
               </span>
             )}
             {!saving && justSaved && (
-              <span className="flex items-center gap-1 text-[10px] text-emerald-500">
+              <span className="flex items-center gap-1 text-[10px] text-primary">
                 <Check className="h-3 w-3" />
                 Saved
               </span>
@@ -651,12 +651,12 @@ export function NoteEditor() {
 
         {/* Completed indicator bar */}
         {note.is_completed && (
-          <div className="flex items-center gap-2 px-4 py-1.5 text-xs border-b bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400">
+          <div className="flex items-center gap-2 px-4 py-1.5 text-xs border-b bg-primary/5 dark:bg-primary/10 text-primary">
             <CheckCircle2 className="h-3.5 w-3.5" />
             <span>Completed {note.completed_at ? new Date(note.completed_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : ''}</span>
             <button
               onClick={() => uncompleteNote(note.id)}
-              className="ml-auto flex items-center gap-1 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
+              className="ml-auto flex items-center gap-1 hover:opacity-80 transition-colors"
             >
               <Undo2 className="h-3 w-3" />
               Uncomplete

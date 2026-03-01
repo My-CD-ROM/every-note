@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { CalendarClock, ChevronRight, FileText, FolderIcon, GripVertical, ListChecks, Repeat, Search, Star } from 'lucide-react';
+import { CalendarClock, ChevronRight, FileText, FolderIcon, GripVertical, ListChecks, Plus, Repeat, Search, Star } from 'lucide-react';
 import { checklistProgressFromContent } from '@/lib/checklist';
 import {
   DndContext,
@@ -19,6 +19,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@/lib/utils';
 import { useNotesStore } from '@/stores/notes-store';
+import { useFoldersStore } from '@/stores/folders-store';
 import { NoteActions } from './NoteActions';
 import { notesApi } from '@/lib/api';
 import { useUIStore } from '@/stores/ui-store';
@@ -43,16 +44,18 @@ function formatDue(iso: string): string {
 }
 
 function MetadataBadges({ note, showFolder }: { note: NoteResponse; showFolder: boolean }) {
+  const folderMap = useFoldersStore((s) => s.folderMap);
   const isPastDue = note.due_at ? new Date(note.due_at) < new Date() : false;
+  const folderName = note.folder_id ? folderMap[note.folder_id] : null;
 
   return (
     <>
       <span className="text-[10px] text-muted-foreground">{formatDate(note.updated_at)}</span>
 
-      {showFolder && note.folder_id && (
+      {showFolder && folderName && (
         <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
           <FolderIcon className="h-2.5 w-2.5" />
-          <span className="truncate max-w-[60px]">folder</span>
+          <span className="truncate max-w-[80px]">{folderName}</span>
         </span>
       )}
 
@@ -248,8 +251,9 @@ function GroupHeader({ label, count, open, onToggle }: { label: string; count: n
 }
 
 export function NoteList({ expanded = false }: { expanded?: boolean }) {
-  const { notes, loading } = useNotesStore();
+  const { notes, loading, createNote } = useNotesStore();
   const view = useUIStore((s) => s.view);
+  const activeFolderId = useFoldersStore((s) => s.activeFolderId);
   const showFolder = view === 'all' || view === 'favorites';
   const [filter, setFilter] = useState('');
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
@@ -301,10 +305,29 @@ export function NoteList({ expanded = false }: { expanded?: boolean }) {
   }
 
   if (notes.length === 0) {
+    const emptyLabel = view === 'trash' ? 'Trash is empty'
+      : view === 'completed' ? 'No completed notes'
+      : view === 'favorites' ? 'No favorites yet'
+      : 'No notes yet';
+
+    const canCreate = !['trash', 'completed'].includes(view);
+
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-1.5 px-4">
-        <FileText className="h-6 w-6 stroke-1" />
-        <p className="text-xs">No notes yet</p>
+      <div className={cn(
+        'flex flex-col items-center justify-center text-muted-foreground gap-2 px-4',
+        expanded ? 'py-24' : 'py-12'
+      )}>
+        <FileText className="h-8 w-8 stroke-1" />
+        <p className="text-sm">{emptyLabel}</p>
+        {canCreate && (
+          <button
+            onClick={() => createNote({ folder_id: view === 'folder' ? activeFolderId : null })}
+            className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors mt-1"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Create your first note
+          </button>
+        )}
       </div>
     );
   }

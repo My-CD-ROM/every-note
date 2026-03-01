@@ -19,12 +19,19 @@ export function DashboardPanel() {
     .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
     .slice(0, 5);
 
-  const stats = [
-    { icon: FileText, label: 'Notes', value: activeNotes.length },
-    { icon: FolderOpen, label: 'Folders', value: folders.length },
-    { icon: Star, label: 'Pinned', value: pinnedCount },
-    { icon: CheckCircle2, label: 'Completed', value: completedCount },
-  ];
+  const isFolder = view === 'folder';
+  const stats = isFolder
+    ? [
+        { icon: FileText, label: 'Notes', value: activeNotes.length },
+        { icon: Star, label: 'Pinned', value: pinnedCount },
+        { icon: CheckCircle2, label: 'Completed', value: completedCount },
+      ]
+    : [
+        { icon: FileText, label: 'Notes', value: activeNotes.length },
+        { icon: FolderOpen, label: 'Folders', value: folders.length },
+        { icon: Star, label: 'Pinned', value: pinnedCount },
+        { icon: CheckCircle2, label: 'Completed', value: completedCount },
+      ];
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -58,7 +65,7 @@ export function DashboardPanel() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className={`grid gap-3 ${isFolder ? 'grid-cols-3' : 'grid-cols-4'}`}>
           {stats.map((s) => (
             <div key={s.label} className="rounded-lg border bg-card px-3 py-2.5 text-center">
               <s.icon className="h-4 w-4 mx-auto text-muted-foreground mb-1" />

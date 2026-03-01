@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { useFoldersStore } from '@/stores/folders-store';
 import { useTagsStore } from '@/stores/tags-store';
 import { useNotesStore } from '@/stores/notes-store';
+import { useProjectsStore } from '@/stores/projects-store';
 import { useUIStore } from '@/stores/ui-store';
 import { exportApi } from '@/lib/api';
 import type { FolderTree } from '@/lib/api';
@@ -182,6 +183,7 @@ export function Sidebar() {
   const { tree, fetchTree } = useFoldersStore();
   const { tags, fetchTags, activeTagId, setActiveTag, createTag } = useTagsStore();
   const { fetchNotes, setActiveNote } = useNotesStore();
+  const { projects, fetchProjects, activeProjectId, setActiveProject, createProject } = useProjectsStore();
   const { theme, toggleTheme, setView, setSearchOpen, view } = useUIStore();
   const setActiveFolder = useFoldersStore((s) => s.setActiveFolder);
 
@@ -189,12 +191,15 @@ export function Sidebar() {
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newTagName, setNewTagName] = useState('');
   const [showNewTag, setShowNewTag] = useState(false);
+  const [newProjectName, setNewProjectName] = useState('');
+  const [showNewProject, setShowNewProject] = useState(false);
   const createFolder = useFoldersStore((s) => s.createFolder);
 
   useEffect(() => {
     fetchTree();
     fetchTags();
-  }, [fetchTree, fetchTags]);
+    fetchProjects();
+  }, [fetchTree, fetchTags, fetchProjects]);
 
   const handleCreateFolder = async () => {
     if (!newFolderName.trim()) return;
@@ -209,6 +214,18 @@ export function Sidebar() {
     await createTag({ name: newTagName.trim(), color });
     setNewTagName('');
     setShowNewTag(false);
+  };
+
+  const handleCreateProject = async () => {
+    if (!newProjectName.trim()) return;
+    const project = await createProject({ name: newProjectName.trim() });
+    setNewProjectName('');
+    setShowNewProject(false);
+    setActiveFolder(null);
+    setActiveTag(null);
+    setActiveNote(null);
+    setView('board');
+    fetchNotes({ project_id: project.id });
   };
 
   const nav = (v: typeof view, fetchParams?: Parameters<typeof fetchNotes>[0]) => {
@@ -250,11 +267,66 @@ export function Sidebar() {
         {/* Navigation */}
         <div className="space-y-0.5">
           <NavItem icon={FileText} label="All Notes" active={view === 'all'} onClick={() => nav('all')} />
-          <NavItem icon={LayoutDashboard} label="Board" active={view === 'board'} iconColor="#0F766E" onClick={() => nav('board')} />
           <NavItem icon={Star} label="Favorites" active={view === 'favorites'} iconColor="#f59e0b" onClick={() => nav('favorites', { pinned: true })} />
           <NavItem icon={CalendarDays} label="Calendar" active={view === 'daily'} iconColor="#3b82f6" onClick={() => { setActiveFolder(null); setActiveTag(null); setActiveNote(null); setView('daily'); }} />
           <NavItem icon={Network} label="Graph View" active={view === 'graph'} iconColor="#6366f1" onClick={() => { setActiveFolder(null); setActiveTag(null); setView('graph'); setActiveNote(null); }} />
         </div>
+
+        <Separator className="my-3" />
+
+        {/* Projects (Board) */}
+        <div className="mb-1 flex items-center justify-between">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">Projects</span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-5 w-5"
+            onClick={() => setShowNewProject(!showNewProject)}
+          >
+            <Plus className="h-3 w-3" />
+          </Button>
+        </div>
+
+        {showNewProject && (
+          <div className="mb-1 px-1">
+            <Input
+              value={newProjectName}
+              onChange={(e) => setNewProjectName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleCreateProject();
+                if (e.key === 'Escape') setShowNewProject(false);
+              }}
+              placeholder="Project name"
+              className="h-7 text-sm"
+              autoFocus
+            />
+          </div>
+        )}
+
+        {projects.map((project) => (
+          <button
+            key={project.id}
+            className={cn(
+              'flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors',
+              'hover:bg-sidebar-accent',
+              view === 'board' && activeProjectId === project.id && 'bg-sidebar-accent font-medium'
+            )}
+            onClick={() => {
+              setActiveProject(project.id);
+              setActiveFolder(null);
+              setActiveTag(null);
+              setActiveNote(null);
+              setView('board');
+              fetchNotes({ project_id: project.id });
+            }}
+          >
+            <LayoutDashboard className="h-4 w-4" style={{ color: '#0F766E' }} />
+            <span className="truncate">{project.icon ? `${project.icon} ` : ''}{project.name}</span>
+            {project.note_count > 0 && (
+              <span className="ml-auto text-xs text-muted-foreground/60">{project.note_count}</span>
+            )}
+          </button>
+        ))}
 
         <Separator className="my-3" />
 

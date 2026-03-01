@@ -82,6 +82,7 @@ def list_notes(
     completed: Optional[bool] = None,
     parent_id: Optional[str] = None,
     status: Optional[str] = None,
+    project_id: Optional[str] = None,
 ):
     query = select(Note).where(Note.is_trashed == trashed)
 
@@ -111,6 +112,9 @@ def list_notes(
             query = query.where(Note.status == None)  # noqa: E711
         else:
             query = query.where(Note.status == status)
+
+    if project_id is not None:
+        query = query.where(Note.project_id == project_id)
 
     query = query.order_by(Note.is_pinned.desc(), Note.updated_at.desc())  # type: ignore[union-attr]
     notes = session.exec(query).all()
@@ -146,6 +150,7 @@ def create_note(data: NoteCreate, session: S):
         note_type=data.note_type,
         parent_id=data.parent_id,
         status=data.status,
+        project_id=data.project_id,
     )
     session.add(note)
     session.flush()

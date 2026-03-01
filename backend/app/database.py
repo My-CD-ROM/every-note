@@ -115,6 +115,77 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_note_links_target ON note_links(target_id);
     """)
 
+    # -- Finance: Spending --
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS spending_categories (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            position REAL DEFAULT 0,
+            created_at TEXT NOT NULL
+        )
+    """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS spending_entries (
+            id TEXT PRIMARY KEY,
+            category_id TEXT NOT NULL REFERENCES spending_categories(id) ON DELETE CASCADE,
+            year INTEGER NOT NULL,
+            month INTEGER NOT NULL CHECK (month BETWEEN 1 AND 12),
+            amount REAL NOT NULL DEFAULT 0,
+            UNIQUE(category_id, year, month)
+        )
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_spending_entries_cat ON spending_entries(category_id)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_spending_entries_year ON spending_entries(year)")
+
+    # -- Finance: Income --
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS income_entries (
+            id TEXT PRIMARY KEY,
+            year INTEGER NOT NULL,
+            month INTEGER NOT NULL CHECK (month BETWEEN 1 AND 12),
+            gross REAL NOT NULL DEFAULT 0,
+            UNIQUE(year, month)
+        )
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_income_entries_year ON income_entries(year)")
+
+    # -- Finance: Utilities --
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS utility_addresses (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            position REAL DEFAULT 0,
+            created_at TEXT NOT NULL
+        )
+    """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS meter_readings (
+            id TEXT PRIMARY KEY,
+            address_id TEXT NOT NULL REFERENCES utility_addresses(id) ON DELETE CASCADE,
+            utility_type TEXT NOT NULL CHECK (utility_type IN ('gas', 'water')),
+            year INTEGER NOT NULL,
+            month INTEGER NOT NULL CHECK (month BETWEEN 1 AND 12),
+            reading REAL NOT NULL DEFAULT 0,
+            UNIQUE(address_id, utility_type, year, month)
+        )
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_meter_readings_addr ON meter_readings(address_id)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_meter_readings_year ON meter_readings(year)")
+
+    # -- Finance: Balance --
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS balance_entries (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            position REAL DEFAULT 0,
+            uah REAL NOT NULL DEFAULT 0,
+            usd REAL NOT NULL DEFAULT 0,
+            eur REAL NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL
+        )
+    """)
+
     # ALTER TABLE migrations for new columns on existing tables
     migrations = [
         ("notes", "is_daily", "ALTER TABLE notes ADD COLUMN is_daily INTEGER NOT NULL DEFAULT 0"),

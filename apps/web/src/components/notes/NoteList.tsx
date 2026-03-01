@@ -147,7 +147,7 @@ function SortableNoteCard({ note, showFolder }: { note: NoteResponse; showFolder
         'hover:bg-muted',
         isActive && 'bg-primary/10 ring-1 ring-primary/30'
       )}
-      onClick={() => setActiveNote(note.id)}
+      onClick={() => setActiveNote(isActive ? null : note.id)}
     >
       {/* Drag handle */}
       <button

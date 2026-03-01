@@ -117,7 +117,7 @@ function InlineSubtasks({ noteId }: { noteId: string }) {
 }
 
 function SortableNoteCard({ note, showFolder }: { note: NoteResponse; showFolder: boolean }) {
-  const { activeNoteId, setActiveNote } = useNotesStore();
+  const { activeNoteId, setActiveNote, updateNote } = useNotesStore();
   const isActive = activeNoteId === note.id;
 
   const {
@@ -162,7 +162,17 @@ function SortableNoteCard({ note, showFolder }: { note: NoteResponse; showFolder
       <div className="flex-1 min-w-0">
         {/* Title row */}
         <div className="flex items-center gap-1.5">
-          {note.is_pinned && <Star className="h-3 w-3 shrink-0 fill-amber-400 text-amber-400" />}
+          <button
+            onClick={(e) => { e.stopPropagation(); updateNote(note.id, { is_pinned: !note.is_pinned }); }}
+            className={cn(
+              'h-3.5 w-3.5 shrink-0 transition-colors',
+              note.is_pinned
+                ? 'text-amber-400'
+                : 'text-transparent group-hover:text-muted-foreground/30 hover:!text-amber-400'
+            )}
+          >
+            <Star className={cn('h-3 w-3', note.is_pinned && 'fill-amber-400')} />
+          </button>
           {note.note_type === 'checklist' && <ListChecks className="h-3 w-3 shrink-0 text-primary" />}
           <span className="text-sm font-medium text-foreground truncate">
             {note.title || 'Untitled'}

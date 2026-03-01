@@ -197,6 +197,29 @@ class GraphData(BaseModel):
     edges: list[GraphEdge]
 
 
+# --- Reminders ---
+class ReminderCreate(BaseModel):
+    remind_at: str
+
+
+class ReminderResponse(BaseModel):
+    id: str
+    note_id: str
+    remind_at: str
+    is_fired: bool
+    is_dismissed: bool
+    created_at: str
+
+
+class ReminderWithNote(BaseModel):
+    id: str
+    note_id: str
+    note_title: str
+    remind_at: str
+    is_fired: bool
+    is_dismissed: bool
+
+
 # --- Attachments ---
 class AttachmentResponse(BaseModel):
     id: str

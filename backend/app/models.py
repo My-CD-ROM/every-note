@@ -86,6 +86,16 @@ class Note(SQLModel, table=True):
     tags: list[Tag] = Relationship(back_populates="notes", link_model=NoteTag)
 
 
+class Reminder(SQLModel, table=True):
+    __tablename__ = "reminders"
+    id: str = Field(default_factory=generate_ulid, primary_key=True)
+    note_id: str = Field(foreign_key="notes.id", index=True)
+    remind_at: str
+    is_fired: bool = Field(default=False)
+    is_dismissed: bool = Field(default=False)
+    created_at: str = Field(default_factory=utc_now)
+
+
 class Attachment(SQLModel, table=True):
     __tablename__ = "attachments"
     id: str = Field(default_factory=generate_ulid, primary_key=True)

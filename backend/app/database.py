@@ -85,6 +85,17 @@ def init_db():
             PRIMARY KEY (source_id, target_id)
         );
 
+        CREATE TABLE IF NOT EXISTS reminders (
+            id TEXT PRIMARY KEY,
+            note_id TEXT NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+            remind_at TEXT NOT NULL,
+            is_fired INTEGER NOT NULL DEFAULT 0,
+            is_dismissed INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_reminders_note ON reminders(note_id);
+
         CREATE TABLE IF NOT EXISTS attachments (
             id TEXT PRIMARY KEY,
             note_id TEXT NOT NULL REFERENCES notes(id) ON DELETE CASCADE,

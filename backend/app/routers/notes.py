@@ -9,7 +9,7 @@ from sqlalchemy import func
 from sqlmodel import Session, select
 
 from app.database import get_session
-from app.models import Note, NoteLink, NoteTag, NoteVersion, Tag, generate_ulid, utc_now
+from app.models import Note, NoteLink, NoteTag, NoteVersion, Reminder, Tag, generate_ulid, utc_now
 from app.schemas import (
     BacklinkResponse,
     NoteCreate,
@@ -26,6 +26,19 @@ router = APIRouter(prefix="/notes", tags=["notes"])
 S = Annotated[Session, Depends(get_session)]
 
 WIKILINK_RE = re.compile(r"\[\[([^\]]+)\]\]")
+
+
+def _dismiss_pending_reminders(note_id: str, session: Session) -> None:
+    """Auto-dismiss all pending reminders for a note."""
+    pending = session.exec(
+        select(Reminder).where(
+            Reminder.note_id == note_id,
+            Reminder.is_dismissed == False,  # noqa: E712
+        )
+    ).all()
+    for r in pending:
+        r.is_dismissed = True
+        session.add(r)
 
 
 def _subtask_counts(note_id: str, session: Session) -> tuple[int, int]:
@@ -244,6 +257,8 @@ def trash_note(note_id: str, session: S, permanent: bool = False):
     # Cascade to subtasks
     subtasks = session.exec(select(Note).where(Note.parent_id == note_id)).all()
 
+    _dismiss_pending_reminders(note_id, session)
+
     if permanent:
         for sub in subtasks:
             session.delete(sub)
@@ -315,6 +330,7 @@ def complete_note(note_id: str, session: S):
     note.completed_at = utc_now()
     if note.status:
         note.status = "done"
+    _dismiss_pending_reminders(note_id, session)
     session.add(note)
 
     # Generate next occurrence for recurring notes

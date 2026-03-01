@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowUpFromDot, Circle, CornerDownRight, LayoutDashboard, MoreHorizontal, FolderIcon, Tag, Undo2, Trash2, CheckCircle2 } from 'lucide-react';
+import { ArrowUpFromDot, Circle, CornerDownRight, LayoutDashboard, MoreHorizontal, FolderIcon, Star, Tag, Undo2, Trash2, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -288,7 +288,7 @@ export function NoteActions({ note }: { note: NoteResponse }) {
         <DropdownMenuItem
           onClick={() => updateNote(note.id, { is_pinned: !note.is_pinned })}
         >
-          {note.is_pinned ? 'Unfavorite' : 'Favorite'}
+          <Star className="mr-2 h-4 w-4" /> {note.is_pinned ? 'Unfavorite' : 'Favorite'}
         </DropdownMenuItem>
 
         {!note.project_id && (

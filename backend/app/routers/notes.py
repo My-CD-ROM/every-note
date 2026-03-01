@@ -143,6 +143,9 @@ def list_notes(
 
     if project_id is not None:
         query = query.where(Note.project_id == project_id)
+    elif not trashed:
+        # Exclude project tasks from notes views (but show all in trash)
+        query = query.where(Note.project_id == None)  # noqa: E711
 
     query = query.order_by(Note.is_pinned.desc(), Note.updated_at.desc())  # type: ignore[union-attr]
     notes = session.exec(query).all()

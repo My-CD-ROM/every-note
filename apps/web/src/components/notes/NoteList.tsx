@@ -75,7 +75,6 @@ function InlineSubtasks({ noteId }: { noteId: string }) {
         <div
           key={sub.id}
           className="flex items-center gap-1.5"
-          onClick={(e) => e.stopPropagation()}
         >
           <button
             onClick={(e) => toggleComplete(e, sub)}

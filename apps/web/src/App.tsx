@@ -140,12 +140,11 @@ function NotesPage() {
               <NoteList />
             </ScrollArea>
           </div>
-          <div className="flex-1 min-w-0">
-            {activeNoteId ? (
+          <div className="flex-1 min-w-0 relative">
+            {!activeNoteId && <DashboardPanel />}
+            <div className={activeNoteId ? 'h-full' : 'h-full invisible absolute inset-0'}>
               <NoteEditor />
-            ) : (
-              <DashboardPanel />
-            )}
+            </div>
           </div>
         </div>
       )}

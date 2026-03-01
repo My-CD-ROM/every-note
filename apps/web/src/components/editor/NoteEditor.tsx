@@ -277,11 +277,7 @@ export function NoteEditor() {
   }, [activeNoteId]);
 
   if (!note) {
-    return (
-      <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
-        Select a note or create one with the + button
-      </div>
-    );
+    return <div className="h-full" />;
   }
 
   const isPastDue = note.due_at && new Date(note.due_at) < new Date();

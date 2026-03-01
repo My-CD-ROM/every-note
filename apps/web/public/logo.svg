@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none">
+  <!-- Back page (offset, lighter) -->
+  <rect x="9" y="2" width="19" height="24" rx="3" fill="#E74C3C" opacity="0.35"/>
+  <!-- Front page -->
+  <rect x="4" y="6" width="19" height="24" rx="3" fill="#E74C3C"/>
+  <!-- Text lines -->
+  <rect x="8" y="14" width="11" height="1.5" rx="0.75" fill="white" opacity="0.7"/>
+  <rect x="8" y="18" width="8" height="1.5" rx="0.75" fill="white" opacity="0.7"/>
+</svg>

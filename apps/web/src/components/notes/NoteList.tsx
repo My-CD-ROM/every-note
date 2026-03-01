@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { CalendarClock, Check, ChevronRight, FileText, FolderIcon, GripVertical, ListChecks, Repeat, Search, Star } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
+import { CalendarClock, ChevronRight, FileText, FolderIcon, GripVertical, ListChecks, Repeat, Search, Star } from 'lucide-react';
 import { checklistProgressFromContent } from '@/lib/checklist';
 import {
   DndContext,
@@ -42,79 +42,6 @@ function formatDue(iso: string): string {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-function InlineSubtasks({ noteId }: { noteId: string }) {
-  const [subtasks, setSubtasks] = useState<NoteResponse[]>([]);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    notesApi.listSubtasks(noteId).then((data) => {
-      setSubtasks(data);
-      setLoaded(true);
-    });
-  }, [noteId]);
-
-  if (!loaded || subtasks.length === 0) return null;
-
-  const toggleComplete = async (e: React.MouseEvent, subtask: NoteResponse) => {
-    e.stopPropagation(); // Don't open the parent note
-    if (subtask.is_completed) {
-      await notesApi.uncomplete(subtask.id);
-    } else {
-      await notesApi.complete(subtask.id);
-    }
-    // Refresh
-    const data = await notesApi.listSubtasks(noteId);
-    setSubtasks(data);
-  };
-
-  const completedCount = subtasks.filter((s) => s.is_completed).length;
-
-  return (
-    <div className="mt-1.5 space-y-0.5">
-      {subtasks.slice(0, 5).map((sub) => (
-        <div
-          key={sub.id}
-          className="flex items-center gap-1.5"
-        >
-          <button
-            onClick={(e) => toggleComplete(e, sub)}
-            className={cn(
-              'h-3.5 w-3.5 rounded border shrink-0 flex items-center justify-center transition-colors',
-              sub.is_completed
-                ? 'bg-primary border-primary text-white'
-                : 'border-border hover:border-muted-foreground/60'
-            )}
-          >
-            {sub.is_completed && <Check className="h-2.5 w-2.5" />}
-          </button>
-          <span className={cn(
-            'text-[11px] truncate',
-            sub.is_completed ? 'line-through text-muted-foreground/50' : 'text-muted-foreground'
-          )}>
-            {sub.title || 'Untitled'}
-          </span>
-        </div>
-      ))}
-      {subtasks.length > 5 && (
-        <span className="text-[10px] text-muted-foreground/50 pl-5">
-          +{subtasks.length - 5} more
-        </span>
-      )}
-      <div className="flex items-center gap-1.5 pt-0.5">
-        <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
-          <div
-            className="h-full bg-primary rounded-full transition-all"
-            style={{ width: `${(completedCount / subtasks.length) * 100}%` }}
-          />
-        </div>
-        <span className="text-[10px] text-muted-foreground/50 shrink-0">
-          {completedCount}/{subtasks.length}
-        </span>
-      </div>
-    </div>
-  );
-}
-
 function SortableNoteCard({ note, showFolder }: { note: NoteResponse; showFolder: boolean }) {
   const { activeNoteId, setActiveNote, updateNote } = useNotesStore();
   const isActive = activeNoteId === note.id;
@@ -134,7 +61,6 @@ function SortableNoteCard({ note, showFolder }: { note: NoteResponse; showFolder
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const preview = note.content.slice(0, 80).replace(/[#*`>\-\[\]]/g, '').trim();
   const isPastDue = note.due_at ? new Date(note.due_at) < new Date() : false;
 
   return (
@@ -142,7 +68,7 @@ function SortableNoteCard({ note, showFolder }: { note: NoteResponse; showFolder
       ref={setNodeRef}
       style={style}
       className={cn(
-        'group flex items-start gap-1.5 rounded-md px-2 py-1.5 transition-colors cursor-pointer',
+        'group flex items-start gap-1.5 rounded-md px-2 py-1 transition-colors cursor-pointer',
         'hover:bg-muted',
         isActive && 'bg-primary/10 ring-1 ring-primary/30'
       )}
@@ -178,20 +104,8 @@ function SortableNoteCard({ note, showFolder }: { note: NoteResponse; showFolder
           </span>
         </div>
 
-        {/* Preview */}
-        {preview && note.subtask_count === 0 && (
-          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
-            {preview}
-          </p>
-        )}
-
-        {/* Inline subtask checklist */}
-        {note.subtask_count > 0 && (
-          <InlineSubtasks noteId={note.id} />
-        )}
-
         {/* Metadata row: date, folder, due, tags */}
-        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
           <span className="text-[10px] text-muted-foreground">{formatDate(note.updated_at)}</span>
 
           {showFolder && note.folder_id && (

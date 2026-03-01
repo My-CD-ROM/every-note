@@ -351,10 +351,18 @@ export const financeApi = {
   listMeterReadings(year: number) {
     return request<MeterReadingResponse[]>(`/finance/meter-readings?year=${year}`);
   },
+  listMeterTypes(addressId: string) {
+    return request<string[]>(`/finance/meter-types/${addressId}`);
+  },
   upsertMeterReading(data: { address_id: string; utility_type: string; year: number; month: number; reading: number }) {
     return request<MeterReadingResponse>('/finance/meter-readings', {
       method: 'PUT',
       body: JSON.stringify(data),
+    });
+  },
+  deleteMeterType(addressId: string, utilityType: string) {
+    return request<{ ok: boolean }>(`/finance/meter-readings/${addressId}/${encodeURIComponent(utilityType)}`, {
+      method: 'DELETE',
     });
   },
 

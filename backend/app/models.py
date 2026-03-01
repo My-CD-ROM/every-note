@@ -153,7 +153,7 @@ class MeterReading(SQLModel, table=True):
     __tablename__ = "meter_readings"
     id: str = Field(default_factory=generate_ulid, primary_key=True)
     address_id: str = Field(foreign_key="utility_addresses.id", index=True)
-    utility_type: str  # 'gas' | 'water'
+    utility_type: str  # user-defined: 'gas', 'water', 'electricity', etc.
     year: int
     month: int
     reading: float = Field(default=0)

@@ -232,6 +232,32 @@ def list_meter_readings(session: S, year: int = Query(...)):
     return readings
 
 
+@router.get("/meter-types/{addr_id}")
+def list_meter_types(addr_id: str, session: S):
+    """Returns distinct utility_type values for an address."""
+    readings = session.exec(
+        select(MeterReading.utility_type)
+        .where(MeterReading.address_id == addr_id)
+        .distinct()
+    ).all()
+    return sorted(set(readings))
+
+
+@router.delete("/meter-readings/{addr_id}/{utility_type}")
+def delete_meter_type(addr_id: str, utility_type: str, session: S):
+    """Deletes all readings for a specific meter type at an address."""
+    readings = session.exec(
+        select(MeterReading).where(
+            MeterReading.address_id == addr_id,
+            MeterReading.utility_type == utility_type,
+        )
+    ).all()
+    for r in readings:
+        session.delete(r)
+    session.commit()
+    return {"ok": True}
+
+
 @router.put("/meter-readings", response_model=MeterReadingResponse)
 def upsert_meter_reading(data: MeterReadingUpsert, session: S):
     existing = session.exec(

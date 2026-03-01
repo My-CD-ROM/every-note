@@ -307,7 +307,7 @@ class UtilityAddressResponse(BaseModel):
 
 class MeterReadingUpsert(BaseModel):
     address_id: str
-    utility_type: str  # 'gas' | 'water'
+    utility_type: str  # user-defined: 'gas', 'water', 'electricity', etc.
     year: int
     month: int
     reading: float

@@ -163,13 +163,33 @@ def init_db():
         CREATE TABLE IF NOT EXISTS meter_readings (
             id TEXT PRIMARY KEY,
             address_id TEXT NOT NULL REFERENCES utility_addresses(id) ON DELETE CASCADE,
-            utility_type TEXT NOT NULL CHECK (utility_type IN ('gas', 'water')),
+            utility_type TEXT NOT NULL,
             year INTEGER NOT NULL,
             month INTEGER NOT NULL CHECK (month BETWEEN 1 AND 12),
             reading REAL NOT NULL DEFAULT 0,
             UNIQUE(address_id, utility_type, year, month)
         )
     """)
+
+    # Migration: remove CHECK constraint on utility_type for existing DBs
+    has_check = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='meter_readings'"
+    ).fetchone()
+    if has_check and "CHECK (utility_type IN" in (has_check[0] or ""):
+        conn.executescript("""
+            CREATE TABLE meter_readings_new (
+                id TEXT PRIMARY KEY,
+                address_id TEXT NOT NULL REFERENCES utility_addresses(id) ON DELETE CASCADE,
+                utility_type TEXT NOT NULL,
+                year INTEGER NOT NULL,
+                month INTEGER NOT NULL CHECK (month BETWEEN 1 AND 12),
+                reading REAL NOT NULL DEFAULT 0,
+                UNIQUE(address_id, utility_type, year, month)
+            );
+            INSERT INTO meter_readings_new SELECT * FROM meter_readings;
+            DROP TABLE meter_readings;
+            ALTER TABLE meter_readings_new RENAME TO meter_readings;
+        """)
     cur.execute("CREATE INDEX IF NOT EXISTS idx_meter_readings_addr ON meter_readings(address_id)")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_meter_readings_year ON meter_readings(year)")
 

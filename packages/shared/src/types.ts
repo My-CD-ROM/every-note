@@ -180,7 +180,7 @@ export interface UtilityAddressResponse {
 export interface MeterReadingResponse {
   id: string;
   address_id: string;
-  utility_type: 'gas' | 'water';
+  utility_type: string;
   year: number;
   month: number;
   reading: number;

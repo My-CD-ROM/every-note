@@ -41,6 +41,7 @@ interface FinanceState {
   updateUtilityAddress: (id: string, data: { name?: string; position?: number }) => Promise<void>;
   deleteUtilityAddress: (id: string) => Promise<void>;
   upsertMeterReading: (addressId: string, utilityType: string, month: number, reading: number) => Promise<void>;
+  deleteMeterType: (addressId: string, utilityType: string) => Promise<void>;
 
   fetchBalanceEntries: () => Promise<void>;
   createBalanceEntry: (name: string) => Promise<void>;
@@ -164,6 +165,11 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
       }
       return { meterReadings: [...s.meterReadings, updated] };
     });
+  },
+
+  deleteMeterType: async (addressId, utilityType) => {
+    await financeApi.deleteMeterType(addressId, utilityType);
+    await get().fetchMeterReadings();
   },
 
   fetchBalanceEntries: async () => {

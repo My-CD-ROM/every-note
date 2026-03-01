@@ -15,12 +15,29 @@ export function useReminders() {
     }
   }, []);
 
+  const checkSummaries = useCallback(async () => {
+    try {
+      const summaries = await remindersApi.summaries();
+      for (const s of summaries) {
+        if (Notification.permission === 'granted') {
+          new Notification(s.name, { body: s.message, tag: `summary-${s.id}` });
+        }
+      }
+    } catch {
+      // Silently fail
+    }
+  }, []);
+
   // Poll every 30 seconds
   useEffect(() => {
     fetchPending();
-    const interval = setInterval(fetchPending, 30_000);
+    checkSummaries();
+    const interval = setInterval(() => {
+      fetchPending();
+      checkSummaries();
+    }, 30_000);
     return () => clearInterval(interval);
-  }, [fetchPending]);
+  }, [fetchPending, checkSummaries]);
 
   // Check for due reminders and fire them
   useEffect(() => {

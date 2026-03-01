@@ -86,6 +86,17 @@ class Note(SQLModel, table=True):
     tags: list[Tag] = Relationship(back_populates="notes", link_model=NoteTag)
 
 
+class Attachment(SQLModel, table=True):
+    __tablename__ = "attachments"
+    id: str = Field(default_factory=generate_ulid, primary_key=True)
+    note_id: str = Field(foreign_key="notes.id", index=True)
+    filename: str
+    original_filename: str
+    mime_type: str
+    size_bytes: int
+    created_at: str = Field(default_factory=utc_now)
+
+
 class NoteVersion(SQLModel, table=True):
     __tablename__ = "note_versions"
     id: str = Field(default_factory=generate_ulid, primary_key=True)

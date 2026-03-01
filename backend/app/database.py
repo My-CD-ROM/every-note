@@ -85,6 +85,17 @@ def init_db():
             PRIMARY KEY (source_id, target_id)
         );
 
+        CREATE TABLE IF NOT EXISTS attachments (
+            id TEXT PRIMARY KEY,
+            note_id TEXT NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+            filename TEXT NOT NULL,
+            original_filename TEXT NOT NULL,
+            mime_type TEXT NOT NULL,
+            size_bytes INTEGER NOT NULL,
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_attachments_note ON attachments(note_id);
         CREATE INDEX IF NOT EXISTS idx_notes_folder ON notes(folder_id);
         CREATE INDEX IF NOT EXISTS idx_notes_trashed ON notes(is_trashed);
         CREATE INDEX IF NOT EXISTS idx_notes_pinned ON notes(is_pinned) WHERE is_pinned = 1;
@@ -162,3 +173,6 @@ def init_db():
 
     conn.commit()
     conn.close()
+
+    # Ensure attachments directory exists
+    os.makedirs("data/attachments", exist_ok=True)

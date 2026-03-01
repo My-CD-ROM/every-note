@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import init_db
-from app.routers import daily, export, folders, graph, notes, projects, search, tags
+from app.routers import attachments, daily, export, folders, graph, notes, projects, search, tags
 
 
 @asynccontextmanager
@@ -31,6 +31,7 @@ app.include_router(search.router)
 app.include_router(daily.router)
 app.include_router(export.router)
 app.include_router(graph.router)
+app.include_router(attachments.router)
 
 
 @app.get("/health")

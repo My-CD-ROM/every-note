@@ -197,6 +197,18 @@ class GraphData(BaseModel):
     edges: list[GraphEdge]
 
 
+# --- Attachments ---
+class AttachmentResponse(BaseModel):
+    id: str
+    note_id: str
+    filename: str
+    original_filename: str
+    mime_type: str
+    size_bytes: int
+    created_at: str
+    url: str
+
+
 # --- Reorder ---
 class ReorderItem(BaseModel):
     id: str

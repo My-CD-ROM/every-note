@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select, func
 
 from app.database import get_session
-from app.models import NoteTag, Tag, generate_ulid
+from app.models import Note, NoteTag, Tag, generate_ulid
 from app.schemas import TagCreate, TagResponse, TagUpdate
 
 router = APIRouter(prefix="/tags", tags=["tags"])
@@ -17,7 +17,9 @@ def list_tags(session: S):
     result = []
     for t in tags:
         count = session.exec(
-            select(func.count()).select_from(NoteTag).where(NoteTag.tag_id == t.id)
+            select(func.count()).select_from(NoteTag).join(Note, NoteTag.note_id == Note.id).where(
+                NoteTag.tag_id == t.id, Note.is_trashed == False, Note.is_completed == False  # noqa: E712
+            )
         ).one()
         result.append(TagResponse(**t.model_dump(), note_count=count))
     return result
@@ -29,7 +31,9 @@ def get_tag(tag_id: str, session: S):
     if not tag:
         raise HTTPException(404, "Tag not found")
     count = session.exec(
-        select(func.count()).select_from(NoteTag).where(NoteTag.tag_id == tag_id)
+        select(func.count()).select_from(NoteTag).join(Note, NoteTag.note_id == Note.id).where(
+            NoteTag.tag_id == tag_id, Note.is_trashed == False, Note.is_completed == False  # noqa: E712
+        )
     ).one()
     return TagResponse(**tag.model_dump(), note_count=count)
 
@@ -62,7 +66,9 @@ def update_tag(tag_id: str, data: TagUpdate, session: S):
     session.refresh(tag)
 
     count = session.exec(
-        select(func.count()).select_from(NoteTag).where(NoteTag.tag_id == tag_id)
+        select(func.count()).select_from(NoteTag).join(Note, NoteTag.note_id == Note.id).where(
+            NoteTag.tag_id == tag_id, Note.is_trashed == False, Note.is_completed == False  # noqa: E712
+        )
     ).one()
     return TagResponse(**tag.model_dump(), note_count=count)
 

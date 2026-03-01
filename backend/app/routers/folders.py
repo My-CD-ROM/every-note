@@ -21,7 +21,7 @@ def list_folders(session: S, parent_id: Optional[str] = None):
     for f in folders:
         count = session.exec(
             select(func.count()).select_from(Note).where(
-                Note.folder_id == f.id, Note.is_trashed == False  # noqa: E712
+                Note.folder_id == f.id, Note.is_trashed == False, Note.is_completed == False  # noqa: E712
             )
         ).one()
         result.append(FolderResponse(**f.model_dump(), note_count=count))
@@ -34,7 +34,7 @@ def get_folder_tree(session: S):
     rows = session.exec(text("""
         WITH RECURSIVE tree AS (
             SELECT f.id, f.name, f.icon, f.parent_id, f.position,
-                   (SELECT COUNT(*) FROM notes n WHERE n.folder_id = f.id AND n.is_trashed = 0) as note_count
+                   (SELECT COUNT(*) FROM notes n WHERE n.folder_id = f.id AND n.is_trashed = 0 AND n.is_completed = 0) as note_count
             FROM folders f
         )
         SELECT * FROM tree ORDER BY position
@@ -66,7 +66,7 @@ def get_folder(folder_id: str, session: S):
         raise HTTPException(404, "Folder not found")
     count = session.exec(
         select(func.count()).select_from(Note).where(
-            Note.folder_id == folder_id, Note.is_trashed == False  # noqa: E712
+            Note.folder_id == folder_id, Note.is_trashed == False, Note.is_completed == False  # noqa: E712
         )
     ).one()
     return FolderResponse(**folder.model_dump(), note_count=count)
@@ -103,7 +103,7 @@ def update_folder(folder_id: str, data: FolderUpdate, session: S):
 
     count = session.exec(
         select(func.count()).select_from(Note).where(
-            Note.folder_id == folder_id, Note.is_trashed == False  # noqa: E712
+            Note.folder_id == folder_id, Note.is_trashed == False, Note.is_completed == False  # noqa: E712
         )
     ).one()
     return FolderResponse(**folder.model_dump(), note_count=count)

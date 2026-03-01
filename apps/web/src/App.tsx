@@ -17,6 +17,7 @@ import { useUIStore } from '@/stores/ui-store';
 import { useFoldersStore } from '@/stores/folders-store';
 import { useProjectsStore } from '@/stores/projects-store';
 import { useReminders } from '@/hooks/useReminders';
+import { useRouter } from '@/hooks/useRouter';
 import { DashboardPanel } from '@/components/DashboardPanel';
 
 const VIEW_TITLES: Record<string, string> = {
@@ -92,12 +93,10 @@ function TopBar() {
 }
 
 function NotesPage() {
-  const { fetchNotes, activeNoteId } = useNotesStore();
+  const { activeNoteId } = useNotesStore();
   const { view } = useUIStore();
 
-  useEffect(() => {
-    fetchNotes();
-  }, [fetchNotes]);
+  useRouter();
 
   // Views that use the list + editor two-panel layout
   const isListView = ['all', 'folder', 'tag', 'trash', 'favorites', 'completed'].includes(view);

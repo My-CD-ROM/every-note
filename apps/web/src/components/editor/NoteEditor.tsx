@@ -276,22 +276,21 @@ export function NoteEditor() {
     }
   }, [activeNoteId]);
 
+  // Replay fade animation on note switch without remounting
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!note || !el) return;
+    el.classList.remove('animate-fade-in-up');
+    void el.offsetWidth;
+    el.classList.add('animate-fade-in-up');
+  }, [activeNoteId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!note) {
     return <div className="h-full" />;
   }
 
   const isPastDue = note.due_at && new Date(note.due_at) < new Date();
-
-  // Replay fade animation on note switch without remounting
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = wrapperRef.current;
-    if (el) {
-      el.classList.remove('animate-fade-in-up');
-      void el.offsetWidth;
-      el.classList.add('animate-fade-in-up');
-    }
-  }, [activeNoteId]);
 
   return (
     <div ref={wrapperRef} className="flex h-full animate-fade-in-up">

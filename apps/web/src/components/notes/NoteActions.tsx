@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowUpFromDot, Circle, CornerDownRight, LayoutDashboard, MoreHorizontal, FolderIcon, Tag, Undo2, Trash2, Download, CheckCircle2 } from 'lucide-react';
+import { ArrowUpFromDot, Circle, CornerDownRight, LayoutDashboard, MoreHorizontal, FolderIcon, Tag, Undo2, Trash2, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -16,7 +16,7 @@ import { useFoldersStore } from '@/stores/folders-store';
 import { useTagsStore } from '@/stores/tags-store';
 import { useUIStore } from '@/stores/ui-store';
 import { useProjectsStore } from '@/stores/projects-store';
-import { notesApi, exportApi } from '@/lib/api';
+import { notesApi } from '@/lib/api';
 import type { FolderTree, NoteResponse } from '@/lib/api';
 import { STATUSES } from '@/lib/statuses';
 
@@ -138,39 +138,41 @@ export function NoteActions({ note }: { note: NoteResponse }) {
           </DropdownMenuSubContent>
         </DropdownMenuSub>
 
-        {/* Move to project */}
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <LayoutDashboard className="mr-2 h-4 w-4" /> Move to project
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent>
-            <DropdownMenuItem
-              onClick={async () => {
-                await updateNote(note.id, { project_id: null });
-                setOpen(false);
-              }}
-            >
-              No project
-            </DropdownMenuItem>
-            {projects.map((p) => (
+        {/* Move to project — only for project tasks */}
+        {note.project_id && (
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <LayoutDashboard className="mr-2 h-4 w-4" /> Move to project
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
               <DropdownMenuItem
-                key={p.id}
                 onClick={async () => {
-                  await updateNote(note.id, { project_id: p.id });
-                  if (view === 'board' && activeProjectId) {
-                    fetchNotes({ project_id: activeProjectId });
-                  } else {
-                    fetchNotes();
-                  }
+                  await updateNote(note.id, { project_id: null });
                   setOpen(false);
                 }}
               >
-                {p.icon ? `${p.icon} ` : ''}{p.name}
-                {note.project_id === p.id && <span className="ml-auto text-xs">✓</span>}
+                No project
               </DropdownMenuItem>
-            ))}
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
+              {projects.map((p) => (
+                <DropdownMenuItem
+                  key={p.id}
+                  onClick={async () => {
+                    await updateNote(note.id, { project_id: p.id });
+                    if (view === 'board' && activeProjectId) {
+                      fetchNotes({ project_id: activeProjectId });
+                    } else {
+                      fetchNotes();
+                    }
+                    setOpen(false);
+                  }}
+                >
+                  {p.icon ? `${p.icon} ` : ''}{p.name}
+                  {note.project_id === p.id && <span className="ml-auto text-xs">✓</span>}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        )}
 
         {/* Tags */}
         <DropdownMenuSub>
@@ -245,39 +247,41 @@ export function NoteActions({ note }: { note: NoteResponse }) {
           </DropdownMenuSub>
         )}
 
-        {/* Set status */}
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <Circle className="mr-2 h-4 w-4" /> Set status
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent>
-            {STATUSES.map((s) => (
-              <DropdownMenuItem
-                key={s.id}
-                onClick={async () => {
-                  await notesApi.setStatus(note.id, s.id);
-                  fetchNotes();
-                  setOpen(false);
-                }}
-              >
-                <span className="mr-2 h-2 w-2 rounded-full" style={{ backgroundColor: s.color }} />
-                {s.label}
-                {note.status === s.id && <span className="ml-auto text-xs">✓</span>}
-              </DropdownMenuItem>
-            ))}
-            {note.status && (
-              <DropdownMenuItem
-                onClick={async () => {
-                  await notesApi.setStatus(note.id, null);
-                  fetchNotes();
-                  setOpen(false);
-                }}
-              >
-                Remove status
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
+        {/* Set status — only for project tasks */}
+        {note.project_id && (
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <Circle className="mr-2 h-4 w-4" /> Set status
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              {STATUSES.map((s) => (
+                <DropdownMenuItem
+                  key={s.id}
+                  onClick={async () => {
+                    await notesApi.setStatus(note.id, s.id);
+                    fetchNotes();
+                    setOpen(false);
+                  }}
+                >
+                  <span className="mr-2 h-2 w-2 rounded-full" style={{ backgroundColor: s.color }} />
+                  {s.label}
+                  {note.status === s.id && <span className="ml-auto text-xs">✓</span>}
+                </DropdownMenuItem>
+              ))}
+              {note.status && (
+                <DropdownMenuItem
+                  onClick={async () => {
+                    await notesApi.setStatus(note.id, null);
+                    fetchNotes();
+                    setOpen(false);
+                  }}
+                >
+                  Remove status
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        )}
 
         <DropdownMenuSeparator />
 
@@ -285,12 +289,6 @@ export function NoteActions({ note }: { note: NoteResponse }) {
           onClick={() => updateNote(note.id, { is_pinned: !note.is_pinned })}
         >
           {note.is_pinned ? 'Unfavorite' : 'Favorite'}
-        </DropdownMenuItem>
-
-        <DropdownMenuItem asChild>
-          <a href={exportApi.noteUrl(note.id)} download>
-            <Download className="mr-2 h-4 w-4" /> Export as .md
-          </a>
         </DropdownMenuItem>
 
         {!note.project_id && (

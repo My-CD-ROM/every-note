@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CalendarClock, Check, CheckCircle2, ChevronRight, Circle, Download, FileText, History, ListChecks, Loader2, MoreHorizontal, Star, Tag, Trash2, Undo2, X } from 'lucide-react';
+import { CalendarClock, Check, CheckCircle2, ChevronRight, Circle, Download, FileText, History, ListChecks, Loader2, MoreHorizontal, Repeat, Star, Tag, Trash2, Undo2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -14,7 +14,21 @@ import { SubtaskList } from './SubtaskList';
 import { useNotesStore } from '@/stores/notes-store';
 import { useTagsStore } from '@/stores/tags-store';
 import { notesApi, exportApi } from '@/lib/api';
+import type { RecurrenceRule } from '@/lib/api';
 import { STATUSES, STATUS_MAP } from '@/lib/statuses';
+
+const FREQ_OPTIONS: { value: RecurrenceRule['freq']; label: string }[] = [
+  { value: 'daily', label: 'Day' },
+  { value: 'weekly', label: 'Week' },
+  { value: 'monthly', label: 'Month' },
+  { value: 'yearly', label: 'Year' },
+];
+
+function formatRecurrence(rule: RecurrenceRule): string {
+  const freq = FREQ_OPTIONS.find((f) => f.value === rule.freq);
+  if (rule.interval === 1) return `Every ${freq?.label.toLowerCase() || rule.freq}`;
+  return `Every ${rule.interval} ${freq?.label.toLowerCase() || rule.freq}s`;
+}
 
 function formatDueAt(iso: string): string {
   const d = new Date(iso);
@@ -74,6 +88,9 @@ export function NoteEditor() {
   const [dueTime, setDueTime] = useState('12:00');
   const [duePopoverOpen, setDuePopoverOpen] = useState(false);
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
+  const [recurrencePopoverOpen, setRecurrencePopoverOpen] = useState(false);
+  const [recFreq, setRecFreq] = useState<RecurrenceRule['freq']>('daily');
+  const [recInterval, setRecInterval] = useState(1);
 
   // Auto-save refs
   const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
@@ -124,6 +141,13 @@ export function NoteEditor() {
       } else {
         setDueDate(undefined);
         setDueTime('12:00');
+      }
+      if (note.recurrence_rule) {
+        setRecFreq(note.recurrence_rule.freq);
+        setRecInterval(note.recurrence_rule.interval);
+      } else {
+        setRecFreq('daily');
+        setRecInterval(1);
       }
       // Clear breadcrumb if navigating to a top-level note from the list
       if (!note.parent_id && parentStack.length > 0) {
@@ -430,6 +454,71 @@ export function NoteEditor() {
             </PopoverContent>
           </Popover>
 
+          {/* Recurrence */}
+          <Popover open={recurrencePopoverOpen} onOpenChange={setRecurrencePopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`h-8 w-8 shrink-0 ${note.recurrence_rule ? 'text-primary' : ''}`}
+                title={note.recurrence_rule ? formatRecurrence(note.recurrence_rule) : 'Set recurrence'}
+              >
+                <Repeat className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-52 p-3" align="end">
+              <div className="text-xs font-medium text-muted-foreground mb-2">Repeat</div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm shrink-0">Every</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={99}
+                  value={recInterval}
+                  onChange={(e) => setRecInterval(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="flex h-8 w-16 rounded-md border bg-transparent px-2 py-1 text-sm text-center"
+                />
+                <select
+                  value={recFreq}
+                  onChange={(e) => setRecFreq(e.target.value as RecurrenceRule['freq'])}
+                  className="flex h-8 flex-1 rounded-md border bg-transparent px-1 py-1 text-sm"
+                >
+                  {FREQ_OPTIONS.map((f) => (
+                    <option key={f.value} value={f.value}>
+                      {recInterval > 1 ? `${f.label}s` : f.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center gap-2 mt-3">
+                <Button
+                  size="sm"
+                  className="flex-1"
+                  onClick={async () => {
+                    await updateNote(note.id, { recurrence_rule: { freq: recFreq, interval: recInterval } });
+                    setRecurrencePopoverOpen(false);
+                    fetchNotes();
+                  }}
+                >
+                  {note.recurrence_rule ? 'Update' : 'Set'}
+                </Button>
+                {note.recurrence_rule && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={async () => {
+                      await notesApi.removeRecurrence(note.id);
+                      setRecurrencePopoverOpen(false);
+                      fetchNotes();
+                    }}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
@@ -492,6 +581,14 @@ export function NoteEditor() {
             <CalendarClock className="h-3 w-3" />
             <span>Due {formatDueAt(note.due_at)}</span>
             {isPastDue && <span className="font-medium">(overdue)</span>}
+          </div>
+        )}
+
+        {/* Recurrence indicator bar */}
+        {note.recurrence_rule && (
+          <div className="flex items-center gap-2 px-4 py-1 text-xs border-b bg-primary/5 text-primary">
+            <Repeat className="h-3 w-3" />
+            <span>{formatRecurrence(note.recurrence_rule)}</span>
           </div>
         )}
 

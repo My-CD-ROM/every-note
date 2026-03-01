@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { CalendarClock, Check, FileText, FolderIcon, GripVertical, ListChecks, Star } from 'lucide-react';
+import { CalendarClock, Check, FileText, FolderIcon, GripVertical, ListChecks, Repeat, Star } from 'lucide-react';
 import { checklistProgressFromContent } from '@/lib/checklist';
 import {
   DndContext,
@@ -201,6 +201,12 @@ function SortableNoteCard({ note, showFolder }: { note: NoteResponse; showFolder
             )}>
               <CalendarClock className="h-2.5 w-2.5" />
               {formatDue(note.due_at)}
+            </span>
+          )}
+
+          {note.recurrence_rule && (
+            <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-primary rounded px-1 py-px bg-primary/10">
+              <Repeat className="h-2.5 w-2.5" />
             </span>
           )}
 

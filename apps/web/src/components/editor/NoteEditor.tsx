@@ -286,8 +286,19 @@ export function NoteEditor() {
 
   const isPastDue = note.due_at && new Date(note.due_at) < new Date();
 
+  // Replay fade animation on note switch without remounting
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (el) {
+      el.classList.remove('animate-fade-in-up');
+      void el.offsetWidth;
+      el.classList.add('animate-fade-in-up');
+    }
+  }, [activeNoteId]);
+
   return (
-    <div key={note.id} className="flex h-full animate-fade-in-up">
+    <div ref={wrapperRef} className="flex h-full animate-fade-in-up">
       <div className="flex flex-1 flex-col min-w-0">
         {/* Breadcrumb navigation for subtasks */}
         {parentStack.length > 0 && (

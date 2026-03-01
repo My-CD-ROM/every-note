@@ -133,7 +133,7 @@
 }
 
 .animate-fade-in-up {
-  animation: fade-in-up 0.2s ease-out;
+  animation: fade-in-up 0.15s ease-out;
 }
 
 @layer base {

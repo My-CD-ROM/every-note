@@ -78,7 +78,7 @@ export function DashboardPanel() {
           <Button
             size="sm"
             className="flex-1 gap-1.5"
-            onClick={() => createNote({})}
+            onClick={async () => { await createNote({}); setView('all'); }}
           >
             <Plus className="h-3.5 w-3.5" />
             New Note
@@ -87,7 +87,7 @@ export function DashboardPanel() {
             size="sm"
             variant="outline"
             className="flex-1 gap-1.5"
-            onClick={() => createNote({ note_type: 'checklist' })}
+            onClick={async () => { await createNote({ note_type: 'checklist' }); setView('all'); }}
           >
             <CheckCircle2 className="h-3.5 w-3.5" />
             New Checklist

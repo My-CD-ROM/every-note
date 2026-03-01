@@ -2,7 +2,27 @@ import { useFinanceStore } from '@/stores/finance-store';
 import { EditableCell } from './EditableCell';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const ESV_MONTHLY = 1910;
+
+// Year-based tax config for Ukrainian ФОП (3rd group)
+// When rates change, add a new year entry here
+interface TaxRates {
+  epRate: number;   // Єдиний податок rate (fraction)
+  vzRate: number;   // Військовий збір rate (fraction)
+  esv: number;      // ЄСВ fixed monthly amount (UAH)
+}
+
+const TAX_RATES: Record<number, TaxRates> = {
+  2024: { epRate: 0.05, vzRate: 0.01, esv: 1760 },
+  2025: { epRate: 0.05, vzRate: 0.01, esv: 1760 },
+  2026: { epRate: 0.05, vzRate: 0.01, esv: 1910 },
+};
+
+function getRates(year: number): TaxRates {
+  // Use exact year match, or fall back to the latest available year
+  if (TAX_RATES[year]) return TAX_RATES[year];
+  const years = Object.keys(TAX_RATES).map(Number).sort((a, b) => b - a);
+  return TAX_RATES[years[0]];
+}
 
 function fmt(n: number): string {
   if (n === 0) return '';
@@ -11,15 +31,17 @@ function fmt(n: number): string {
 
 export function IncomeTab() {
   const { year, incomeEntries, upsertIncome } = useFinanceStore();
+  const rates = getRates(year);
 
   const getGross = (month: number): number => {
     return incomeEntries.find((e) => e.year === year && e.month === month)?.gross ?? 0;
   };
 
-  const getNet = (month: number) => getGross(month) * 0.92;
-  const getEP = (month: number) => getGross(month) * 0.05;
-  const getESV = (month: number) => (getGross(month) > 0 ? ESV_MONTHLY : 0);
-  const getTotalTax = (month: number) => getESV(month) + getEP(month);
+  const getEP = (month: number) => getGross(month) * rates.epRate;
+  const getVZ = (month: number) => getGross(month) * rates.vzRate;
+  const getESV = (month: number) => (getGross(month) > 0 ? rates.esv : 0);
+  const getTotalTax = (month: number) => getESV(month) + getEP(month) + getVZ(month);
+  const getNet = (month: number) => getGross(month) - getTotalTax(month);
 
   const sumRange = (fn: (m: number) => number, from: number, to: number) => {
     let s = 0;
@@ -38,10 +60,11 @@ export function IncomeTab() {
 
   const rows: Row[] = [
     { label: 'Брутто', getValue: getGross, editable: true },
-    { label: 'Нетто', getValue: getNet, editable: false },
-    { label: 'ЄСВ', getValue: getESV, editable: false },
-    { label: 'ЄП (5%)', getValue: getEP, editable: false },
+    { label: `ЄП (${rates.epRate * 100}%)`, getValue: getEP, editable: false },
+    { label: `ВЗ (${rates.vzRate * 100}%)`, getValue: getVZ, editable: false },
+    { label: `ЄСВ (${rates.esv})`, getValue: getESV, editable: false },
     { label: 'Всього податків', getValue: getTotalTax, editable: false },
+    { label: 'Нетто', getValue: getNet, editable: false },
   ];
 
   return (

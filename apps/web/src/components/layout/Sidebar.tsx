@@ -321,7 +321,7 @@ export function Sidebar() {
               fetchNotes({ project_id: project.id });
             }}
           >
-            <LayoutDashboard className="h-4 w-4" style={{ color: '#0F766E' }} />
+            <LayoutDashboard className="h-4 w-4" style={{ color: '#E74C3C' }} />
             <span className="truncate">{project.icon ? `${project.icon} ` : ''}{project.name}</span>
             {project.note_count > 0 && (
               <span className="ml-auto text-xs text-muted-foreground/60">{project.note_count}</span>
@@ -429,7 +429,7 @@ export function Sidebar() {
           icon={Wallet}
           label="Finance"
           active={view === 'finance'}
-          iconColor="#059669"
+          iconColor="#7C756E"
           onClick={() => {
             setActiveFolder(null);
             setActiveTag(null);

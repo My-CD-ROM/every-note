@@ -14,7 +14,7 @@ import { useNotesStore } from '@/stores/notes-store';
 import { useUIStore } from '@/stores/ui-store';
 
 const EDGE_STYLES: Record<string, { stroke: string; strokeDasharray?: string }> = {
-  link: { stroke: '#0F766E' },
+  link: { stroke: '#E74C3C' },
   tag: { stroke: '#f59e0b', strokeDasharray: '5 5' },
   folder: { stroke: '#64748b', strokeDasharray: '2 4' },
 };

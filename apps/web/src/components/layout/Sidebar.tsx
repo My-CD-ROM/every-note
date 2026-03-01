@@ -3,7 +3,6 @@ import {
   CalendarDays,
   CheckCircle2,
   ChevronRight,
-  Download,
   FileText,
   FolderIcon,
   Home,
@@ -34,7 +33,7 @@ import { useTagsStore } from '@/stores/tags-store';
 import { useNotesStore } from '@/stores/notes-store';
 import { useProjectsStore } from '@/stores/projects-store';
 import { useUIStore } from '@/stores/ui-store';
-import { exportApi } from '@/lib/api';
+import { foldersApi } from '@/lib/api';
 import type { FolderTree } from '@/lib/api';
 
 const TAG_COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
@@ -188,13 +187,6 @@ function FolderNode({ folder, depth = 0 }: { folder: FolderTree; depth?: number 
           )}
         </div>
         <div className="flex items-center mr-1 opacity-0 group-hover:opacity-100">
-          <a
-            href={exportApi.folderUrl(folder.id)}
-            download
-            title="Export folder as .zip"
-          >
-            <Download className="h-3 w-3 text-muted-foreground hover:text-foreground" />
-          </a>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button

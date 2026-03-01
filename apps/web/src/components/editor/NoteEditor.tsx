@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Bell, CalendarClock, Check, CheckCircle2, ChevronRight, Download, FileText, History, ListChecks, Loader2, MoreHorizontal, Paperclip, Repeat, Star, Tag, Trash2, Undo2, X } from 'lucide-react';
+import { Bell, CalendarClock, Check, CheckCircle2, ChevronRight, FileText, History, ListChecks, Loader2, MoreHorizontal, Paperclip, Repeat, Star, Tag, Trash2, Undo2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -14,7 +14,7 @@ import { SubtaskList } from './SubtaskList';
 import { AttachmentPanel } from './AttachmentPanel';
 import { useNotesStore } from '@/stores/notes-store';
 import { useTagsStore } from '@/stores/tags-store';
-import { notesApi, exportApi, attachmentsApi, remindersApi } from '@/lib/api';
+import { notesApi, attachmentsApi, remindersApi } from '@/lib/api';
 import type { RecurrenceRule } from '@/lib/api';
 
 const FREQ_OPTIONS: { value: RecurrenceRule['freq']; label: string }[] = [
@@ -599,12 +599,6 @@ export function NoteEditor() {
                   Mark complete
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem asChild>
-                <a href={exportApi.noteUrl(note.id)} download>
-                  <Download className="h-4 w-4 mr-2" />
-                  Export as .md
-                </a>
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-red-500 focus:text-red-500" onClick={() => deleteNote(note.id)}>
                 <Trash2 className="h-4 w-4 mr-2" />

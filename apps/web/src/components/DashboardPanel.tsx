@@ -62,7 +62,7 @@ export function DashboardPanel() {
   };
 
   return (
-    <div className="flex h-full flex-col items-center justify-center px-8">
+    <div className="flex h-full flex-col items-center justify-center px-8 animate-fade-in-up">
       <div className="w-full max-w-md space-y-6">
         {/* Greeting */}
         <div>

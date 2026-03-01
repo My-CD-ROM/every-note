@@ -287,7 +287,7 @@ export function NoteEditor() {
   const isPastDue = note.due_at && new Date(note.due_at) < new Date();
 
   return (
-    <div className="flex h-full">
+    <div key={note.id} className="flex h-full animate-fade-in-up">
       <div className="flex flex-1 flex-col min-w-0">
         {/* Breadcrumb navigation for subtasks */}
         {parentStack.length > 0 && (

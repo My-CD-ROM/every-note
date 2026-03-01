@@ -12,12 +12,13 @@ import { NotificationCenter } from '@/components/reminders/NotificationCenter';
 import { TemplatePicker } from '@/components/notes/TemplatePicker';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Menu, Plus, FileText } from 'lucide-react';
+import { Menu, Plus } from 'lucide-react';
 import { useNotesStore } from '@/stores/notes-store';
 import { useUIStore } from '@/stores/ui-store';
 import { useFoldersStore } from '@/stores/folders-store';
 import { useProjectsStore } from '@/stores/projects-store';
 import { useReminders } from '@/hooks/useReminders';
+import { DashboardPanel } from '@/components/DashboardPanel';
 
 const VIEW_TITLES: Record<string, string> = {
   all: 'All Notes',
@@ -152,13 +153,7 @@ function NotesPage() {
             {activeNoteId ? (
               <NoteEditor />
             ) : (
-              <div className="flex h-full flex-col items-center justify-center text-muted-foreground gap-2">
-                <FileText className="h-10 w-10 stroke-1" />
-                <div className="text-center text-sm">
-                  <p>No note selected</p>
-                  <p className="text-xs text-muted-foreground/60">Select a note or press + to create one</p>
-                </div>
-              </div>
+              <DashboardPanel />
             )}
           </div>
         </div>

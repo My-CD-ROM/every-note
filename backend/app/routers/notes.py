@@ -1,6 +1,9 @@
+import json
 import re
+from datetime import datetime
 from typing import Annotated, Optional
 
+from dateutil.relativedelta import relativedelta
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func
 from sqlmodel import Session, select
@@ -14,6 +17,7 @@ from app.schemas import (
     NoteUpdate,
     NoteVersionBrief,
     NoteVersionResponse,
+    RecurrenceRule,
     ReorderRequest,
     TagBrief,
 )
@@ -37,13 +41,24 @@ def _subtask_counts(note_id: str, session: Session) -> tuple[int, int]:
     return total, completed
 
 
+def _parse_recurrence_rule(raw: Optional[str]) -> Optional[RecurrenceRule]:
+    if not raw:
+        return None
+    try:
+        return RecurrenceRule(**json.loads(raw))
+    except (json.JSONDecodeError, ValueError):
+        return None
+
+
 def _note_response(note: Note, session: Session) -> NoteResponse:
     tags = session.exec(
         select(Tag).join(NoteTag).where(NoteTag.note_id == note.id)
     ).all()
     subtask_count, subtask_completed = _subtask_counts(note.id, session)
+    data = note.model_dump()
+    data["recurrence_rule"] = _parse_recurrence_rule(data.get("recurrence_rule"))
     return NoteResponse(
-        **note.model_dump(),
+        **data,
         tags=[TagBrief(id=t.id, name=t.name, color=t.color) for t in tags],
         subtask_count=subtask_count,
         subtask_completed=subtask_completed,
@@ -151,6 +166,7 @@ def create_note(data: NoteCreate, session: S):
         parent_id=data.parent_id,
         status=data.status,
         project_id=data.project_id,
+        recurrence_rule=data.recurrence_rule.model_dump_json() if data.recurrence_rule else None,
     )
     session.add(note)
     session.flush()
@@ -199,6 +215,11 @@ def update_note(note_id: str, data: NoteUpdate, session: S):
             content=note.content,
         )
         session.add(version)
+
+    # Serialize recurrence_rule to JSON string for storage
+    if "recurrence_rule" in update_data:
+        rule = update_data["recurrence_rule"]
+        update_data["recurrence_rule"] = json.dumps(rule) if rule else None
 
     for key, value in update_data.items():
         setattr(note, key, value)
@@ -263,6 +284,27 @@ def restore_note(note_id: str, session: S):
     return _note_response(note, session)
 
 
+def _advance_due_date(due_at: Optional[str], rule: RecurrenceRule) -> str:
+    """Calculate the next due date by advancing the current one by the recurrence interval."""
+    if due_at:
+        base = datetime.fromisoformat(due_at.replace("Z", "+00:00"))
+    else:
+        base = datetime.now()
+
+    freq = rule.freq
+    interval = rule.interval
+    if freq == "daily":
+        next_date = base + relativedelta(days=interval)
+    elif freq == "weekly":
+        next_date = base + relativedelta(weeks=interval)
+    elif freq == "monthly":
+        next_date = base + relativedelta(months=interval)
+    else:  # yearly
+        next_date = base + relativedelta(years=interval)
+
+    return next_date.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+
+
 @router.post("/{note_id}/complete", response_model=NoteResponse)
 def complete_note(note_id: str, session: S):
     note = session.get(Note, note_id)
@@ -273,6 +315,50 @@ def complete_note(note_id: str, session: S):
     note.completed_at = utc_now()
     if note.status:
         note.status = "done"
+    session.add(note)
+
+    # Generate next occurrence for recurring notes
+    next_note = None
+    rule = _parse_recurrence_rule(note.recurrence_rule)
+    if rule:
+        # Clone tags before flush
+        tag_ids = [t.id for t in session.exec(
+            select(Tag).join(NoteTag).where(NoteTag.note_id == note.id)
+        ).all()]
+
+        next_note = Note(
+            id=generate_ulid(),
+            title=note.title,
+            content=note.content,
+            folder_id=note.folder_id,
+            note_type=note.note_type,
+            status="todo" if note.status else None,
+            project_id=note.project_id,
+            recurrence_rule=note.recurrence_rule,
+            recurrence_source_id=note.id,
+            due_at=_advance_due_date(note.due_at, rule),
+        )
+        session.add(next_note)
+        session.flush()
+
+        # Copy tags to next occurrence
+        for tag_id in tag_ids:
+            session.add(NoteTag(note_id=next_note.id, tag_id=tag_id))
+
+    session.commit()
+    session.refresh(note)
+    return _note_response(note, session)
+
+
+@router.delete("/{note_id}/recurrence", response_model=NoteResponse)
+def remove_recurrence(note_id: str, session: S):
+    note = session.get(Note, note_id)
+    if not note:
+        raise HTTPException(404, "Note not found")
+
+    note.recurrence_rule = None
+    note.recurrence_source_id = None
+    note.updated_at = utc_now()
     session.add(note)
     session.commit()
     session.refresh(note)

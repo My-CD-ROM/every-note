@@ -77,6 +77,8 @@ class Note(SQLModel, table=True):
     parent_id: Optional[str] = Field(default=None, foreign_key="notes.id")
     status: Optional[str] = Field(default=None)
     project_id: Optional[str] = Field(default=None, foreign_key="projects.id")
+    recurrence_rule: Optional[str] = Field(default=None)  # JSON: {"freq": "daily|weekly|monthly|yearly", "interval": 1}
+    recurrence_source_id: Optional[str] = Field(default=None, foreign_key="notes.id")
     created_at: str = Field(default_factory=utc_now)
     updated_at: str = Field(default_factory=utc_now)
 

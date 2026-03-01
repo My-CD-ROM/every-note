@@ -105,6 +105,8 @@ def init_db():
         ("notes", "parent_id", "ALTER TABLE notes ADD COLUMN parent_id TEXT REFERENCES notes(id) ON DELETE CASCADE"),
         ("notes", "status", "ALTER TABLE notes ADD COLUMN status TEXT DEFAULT NULL"),
         ("notes", "project_id", "ALTER TABLE notes ADD COLUMN project_id TEXT REFERENCES projects(id) ON DELETE SET NULL"),
+        ("notes", "recurrence_rule", "ALTER TABLE notes ADD COLUMN recurrence_rule TEXT DEFAULT NULL"),
+        ("notes", "recurrence_source_id", "ALTER TABLE notes ADD COLUMN recurrence_source_id TEXT REFERENCES notes(id) ON DELETE SET NULL"),
     ]
     for table, column, sql in migrations:
         try:

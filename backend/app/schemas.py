@@ -1,6 +1,12 @@
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel
+
+
+# --- Recurrence ---
+class RecurrenceRule(BaseModel):
+    freq: Literal["daily", "weekly", "monthly", "yearly"]
+    interval: int = 1
 
 
 # --- Notes ---
@@ -12,6 +18,7 @@ class NoteCreate(BaseModel):
     parent_id: Optional[str] = None
     status: Optional[str] = None
     project_id: Optional[str] = None
+    recurrence_rule: Optional[RecurrenceRule] = None
 
 
 class NoteUpdate(BaseModel):
@@ -26,6 +33,7 @@ class NoteUpdate(BaseModel):
     parent_id: Optional[str] = None
     status: Optional[str] = None
     project_id: Optional[str] = None
+    recurrence_rule: Optional[RecurrenceRule] = None
 
 
 class TagBrief(BaseModel):
@@ -52,6 +60,8 @@ class NoteResponse(BaseModel):
     parent_id: Optional[str]
     status: Optional[str]
     project_id: Optional[str]
+    recurrence_rule: Optional[RecurrenceRule]
+    recurrence_source_id: Optional[str]
     created_at: str
     updated_at: str
     tags: list[TagBrief] = []

@@ -3,6 +3,7 @@ import type {
   FolderResponse,
   FolderTree,
   TagResponse,
+  ProjectResponse,
   SearchResult,
   NoteVersionBrief,
   NoteVersionResponse,
@@ -17,6 +18,7 @@ export type {
   FolderResponse,
   FolderTree,
   TagResponse,
+  ProjectResponse,
   SearchResult,
   NoteVersionBrief,
   NoteVersionResponse,
@@ -43,23 +45,24 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 // --- Notes ---
 
 export const notesApi = {
-  list(params?: { folder_id?: string; tag_id?: string; trashed?: boolean; pinned?: boolean; completed?: boolean }) {
+  list(params?: { folder_id?: string; tag_id?: string; trashed?: boolean; pinned?: boolean; completed?: boolean; project_id?: string }) {
     const qs = new URLSearchParams();
     if (params?.folder_id) qs.set('folder_id', params.folder_id);
     if (params?.tag_id) qs.set('tag_id', params.tag_id);
     if (params?.trashed) qs.set('trashed', 'true');
     if (params?.pinned) qs.set('pinned', 'true');
     if (params?.completed) qs.set('completed', 'true');
+    if (params?.project_id) qs.set('project_id', params.project_id);
     const query = qs.toString();
     return request<NoteResponse[]>(`/notes${query ? `?${query}` : ''}`);
   },
   get(id: string) {
     return request<NoteResponse>(`/notes/${id}`);
   },
-  create(data: { title?: string; content?: string; folder_id?: string | null; note_type?: string; parent_id?: string | null; status?: string | null }) {
+  create(data: { title?: string; content?: string; folder_id?: string | null; note_type?: string; parent_id?: string | null; status?: string | null; project_id?: string | null }) {
     return request<NoteResponse>('/notes', { method: 'POST', body: JSON.stringify(data) });
   },
-  update(id: string, data: { title?: string; content?: string; folder_id?: string | null; position?: number; is_pinned?: boolean; due_at?: string | null; note_type?: string; parent_id?: string | null; status?: string | null }) {
+  update(id: string, data: { title?: string; content?: string; folder_id?: string | null; position?: number; is_pinned?: boolean; due_at?: string | null; note_type?: string; parent_id?: string | null; status?: string | null; project_id?: string | null }) {
     return request<NoteResponse>(`/notes/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
   },
   setStatus(id: string, status: string | null) {
@@ -144,6 +147,23 @@ export const tagsApi = {
   },
   delete(id: string) {
     return request<{ ok: boolean }>(`/tags/${id}`, { method: 'DELETE' });
+  },
+};
+
+// --- Projects ---
+
+export const projectsApi = {
+  list() {
+    return request<ProjectResponse[]>('/projects');
+  },
+  create(data: { name: string; icon?: string | null; description?: string | null }) {
+    return request<ProjectResponse>('/projects', { method: 'POST', body: JSON.stringify(data) });
+  },
+  update(id: string, data: { name?: string; icon?: string | null; description?: string | null }) {
+    return request<ProjectResponse>(`/projects/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+  },
+  delete(id: string) {
+    return request<{ ok: boolean }>(`/projects/${id}`, { method: 'DELETE' });
   },
 };
 

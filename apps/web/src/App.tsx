@@ -7,6 +7,7 @@ import { SearchPalette } from '@/components/SearchPalette';
 import { GraphView } from '@/components/graph/GraphView';
 import { CalendarView } from '@/components/calendar/CalendarView';
 import { BoardView } from '@/components/board/BoardView';
+import { FinanceView } from '@/components/finance/FinanceView';
 import { NotificationCenter } from '@/components/reminders/NotificationCenter';
 import { TemplatePicker } from '@/components/notes/TemplatePicker';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -28,6 +29,7 @@ const VIEW_TITLES: Record<string, string> = {
   completed: 'Completed',
   daily: 'Calendar',
   graph: 'Graph View',
+  finance: 'Finance',
 };
 
 function TopBar() {
@@ -51,7 +53,7 @@ function TopBar() {
     });
   };
 
-  const showCreateButton = !['trash', 'all', 'board', 'graph', 'daily', 'completed'].includes(view);
+  const showCreateButton = !['trash', 'all', 'board', 'graph', 'daily', 'completed', 'finance'].includes(view);
 
   return (
     <div className="flex items-center justify-between border-b px-3 py-1.5 bg-background shrink-0">
@@ -103,6 +105,13 @@ function NotesPage() {
   return (
     <div className="flex h-full flex-col">
       <TopBar />
+
+      {/* Finance — full-page view */}
+      {view === 'finance' && (
+        <div className="flex-1 overflow-hidden">
+          <FinanceView />
+        </div>
+      )}
 
       {/* Full-page views */}
       {view === 'graph' && (

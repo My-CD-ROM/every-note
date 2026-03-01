@@ -145,3 +145,53 @@ export interface AttachmentResponse {
   created_at: string;
   url: string;
 }
+
+// --- Finance ---
+
+export interface SpendingCategoryResponse {
+  id: string;
+  name: string;
+  position: number;
+  created_at: string;
+}
+
+export interface SpendingEntryResponse {
+  id: string;
+  category_id: string;
+  year: number;
+  month: number;
+  amount: number;
+}
+
+export interface IncomeEntryResponse {
+  id: string;
+  year: number;
+  month: number;
+  gross: number;
+}
+
+export interface UtilityAddressResponse {
+  id: string;
+  name: string;
+  position: number;
+  created_at: string;
+}
+
+export interface MeterReadingResponse {
+  id: string;
+  address_id: string;
+  utility_type: 'gas' | 'water';
+  year: number;
+  month: number;
+  reading: number;
+}
+
+export interface BalanceEntryResponse {
+  id: string;
+  name: string;
+  position: number;
+  uah: number;
+  usd: number;
+  eur: number;
+  created_at: string;
+}

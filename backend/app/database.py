@@ -27,6 +27,15 @@ def init_db():
     conn.execute("PRAGMA foreign_keys=ON")
 
     conn.executescript("""
+        CREATE TABLE IF NOT EXISTS projects (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            icon TEXT,
+            description TEXT,
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+            updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+        );
+
         CREATE TABLE IF NOT EXISTS folders (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
@@ -95,6 +104,7 @@ def init_db():
         ("notes", "completed_at", "ALTER TABLE notes ADD COLUMN completed_at TEXT"),
         ("notes", "parent_id", "ALTER TABLE notes ADD COLUMN parent_id TEXT REFERENCES notes(id) ON DELETE CASCADE"),
         ("notes", "status", "ALTER TABLE notes ADD COLUMN status TEXT DEFAULT NULL"),
+        ("notes", "project_id", "ALTER TABLE notes ADD COLUMN project_id TEXT REFERENCES projects(id) ON DELETE SET NULL"),
     ]
     for table, column, sql in migrations:
         try:
@@ -106,6 +116,7 @@ def init_db():
     for idx_sql in [
         "CREATE INDEX IF NOT EXISTS idx_notes_daily_date ON notes(daily_date)",
         "CREATE INDEX IF NOT EXISTS idx_notes_parent ON notes(parent_id)",
+        "CREATE INDEX IF NOT EXISTS idx_notes_project ON notes(project_id)",
     ]:
         try:
             conn.execute(idx_sql)

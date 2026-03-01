@@ -48,6 +48,16 @@ class Folder(SQLModel, table=True):
     notes: list["Note"] = Relationship(back_populates="folder")
 
 
+class Project(SQLModel, table=True):
+    __tablename__ = "projects"
+    id: str = Field(default_factory=generate_ulid, primary_key=True)
+    name: str
+    icon: Optional[str] = Field(default=None)
+    description: Optional[str] = Field(default=None)
+    created_at: str = Field(default_factory=utc_now)
+    updated_at: str = Field(default_factory=utc_now)
+
+
 class Note(SQLModel, table=True):
     __tablename__ = "notes"
     id: str = Field(default_factory=generate_ulid, primary_key=True)
@@ -66,6 +76,7 @@ class Note(SQLModel, table=True):
     due_at: Optional[str] = Field(default=None)
     parent_id: Optional[str] = Field(default=None, foreign_key="notes.id")
     status: Optional[str] = Field(default=None)
+    project_id: Optional[str] = Field(default=None, foreign_key="projects.id")
     created_at: str = Field(default_factory=utc_now)
     updated_at: str = Field(default_factory=utc_now)
 

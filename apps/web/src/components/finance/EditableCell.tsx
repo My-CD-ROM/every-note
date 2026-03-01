@@ -31,10 +31,25 @@ export function EditableCell({ value, onSave, disabled, className }: EditableCel
     setEditing(true);
   };
 
+  const evaluate = (input: string): number => {
+    const cleaned = input.replace(/\s/g, '').replace(',', '.');
+    // Support math expressions: only allow digits, dots, and math operators
+    if (/[+\-*/]/.test(cleaned) && /\d/.test(cleaned)) {
+      if (!/^[\d.+\-*/()]+$/.test(cleaned)) return parseFloat(cleaned) || 0;
+      try {
+        // Safe: input is validated to only contain [0-9.+\-*/()]
+        const result = new Function(`return (${cleaned})`)() as number; // eslint-disable-line no-new-func
+        return isFinite(result) ? result : 0;
+      } catch {
+        return parseFloat(cleaned) || 0;
+      }
+    }
+    return parseFloat(cleaned) || 0;
+  };
+
   const commit = () => {
     setEditing(false);
-    const parsed = parseFloat(text.replace(/\s/g, '').replace(',', '.'));
-    const newValue = isNaN(parsed) ? 0 : parsed;
+    const newValue = evaluate(text);
     if (newValue !== value) {
       onSave(newValue);
     }

@@ -240,3 +240,106 @@ class ReorderItem(BaseModel):
 
 class ReorderRequest(BaseModel):
     items: list[ReorderItem]
+
+
+# --- Finance: Spending ---
+class SpendingCategoryCreate(BaseModel):
+    name: str
+
+
+class SpendingCategoryUpdate(BaseModel):
+    name: Optional[str] = None
+    position: Optional[float] = None
+
+
+class SpendingCategoryResponse(BaseModel):
+    id: str
+    name: str
+    position: float
+    created_at: str
+
+
+class SpendingEntryUpsert(BaseModel):
+    category_id: str
+    year: int
+    month: int
+    amount: float
+
+
+class SpendingEntryResponse(BaseModel):
+    id: str
+    category_id: str
+    year: int
+    month: int
+    amount: float
+
+
+# --- Finance: Income ---
+class IncomeEntryUpsert(BaseModel):
+    year: int
+    month: int
+    gross: float
+
+
+class IncomeEntryResponse(BaseModel):
+    id: str
+    year: int
+    month: int
+    gross: float
+
+
+# --- Finance: Utilities ---
+class UtilityAddressCreate(BaseModel):
+    name: str
+
+
+class UtilityAddressUpdate(BaseModel):
+    name: Optional[str] = None
+    position: Optional[float] = None
+
+
+class UtilityAddressResponse(BaseModel):
+    id: str
+    name: str
+    position: float
+    created_at: str
+
+
+class MeterReadingUpsert(BaseModel):
+    address_id: str
+    utility_type: str  # 'gas' | 'water'
+    year: int
+    month: int
+    reading: float
+
+
+class MeterReadingResponse(BaseModel):
+    id: str
+    address_id: str
+    utility_type: str
+    year: int
+    month: int
+    reading: float
+
+
+# --- Finance: Balance ---
+class BalanceEntryCreate(BaseModel):
+    name: str
+
+
+class BalanceEntryUpdate(BaseModel):
+    name: Optional[str] = None
+    position: Optional[float] = None
+    uah: Optional[float] = None
+    usd: Optional[float] = None
+    eur: Optional[float] = None
+
+
+class BalanceEntryResponse(BaseModel):
+    id: str
+    name: str
+    position: float
+    uah: float
+    usd: float
+    eur: float
+    created_at: str

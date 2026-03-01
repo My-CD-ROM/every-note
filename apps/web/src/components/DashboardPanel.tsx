@@ -6,9 +6,8 @@ import { useUIStore } from '@/stores/ui-store';
 
 export function DashboardPanel() {
   const { notes, createNote, setActiveNote } = useNotesStore();
-  const { folders } = useFoldersStore();
+  const { tree: folders, activeFolderId } = useFoldersStore();
   const { view } = useUIStore();
-  const activeFolderId = useFoldersStore((s) => s.activeFolderId);
 
   const activeNotes = notes.filter((n) => !n.is_trashed);
   const pinnedCount = activeNotes.filter((n) => n.is_pinned).length;

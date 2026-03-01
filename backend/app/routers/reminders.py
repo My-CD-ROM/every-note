@@ -1,12 +1,13 @@
 from datetime import datetime, timezone, timedelta
 from typing import Annotated
 
+from croniter import croniter
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func
 
 from app.database import get_session
-from app.models import Note, Reminder, generate_ulid, utc_now
-from app.schemas import ReminderCreate, ReminderResponse, ReminderWithNote
+from app.models import Note, Reminder, ScheduledSummary, generate_ulid, utc_now
+from app.schemas import ReminderCreate, ReminderResponse, ReminderWithNote, ScheduledSummaryFired
 
 router = APIRouter(tags=["reminders"])
 S = Annotated[Session, Depends(get_session)]
@@ -136,3 +137,49 @@ def mark_fired(reminder_id: str, session: S):
     session.commit()
     session.refresh(reminder)
     return _reminder_response(reminder)
+
+
+@router.get("/reminders/summaries", response_model=list[ScheduledSummaryFired])
+def get_due_summaries(session: S):
+    """Return summaries that should fire now based on cron schedule."""
+    summaries = session.exec(
+        select(ScheduledSummary).where(ScheduledSummary.is_active == True)  # noqa: E712
+    ).all()
+
+    now = datetime.now(timezone.utc)
+    result = []
+
+    for s in summaries:
+        cron = croniter(s.cron_expression, now)
+        prev_fire = cron.get_prev(datetime)
+
+        if s.last_fired_at:
+            last = datetime.fromisoformat(s.last_fired_at.replace("Z", "+00:00"))
+            if last >= prev_fire:
+                continue
+
+        count_query = select(func.count()).select_from(Note).where(
+            Note.is_trashed == False,  # noqa: E712
+            Note.is_completed == False,  # noqa: E712
+            Note.parent_id == None,  # noqa: E711
+        )
+        if s.folder_id:
+            count_query = count_query.where(Note.folder_id == s.folder_id)
+
+        count = session.exec(count_query).one()
+        if count == 0:
+            s.last_fired_at = utc_now()
+            session.add(s)
+            session.commit()
+            continue
+
+        message = s.message_template.replace("{count}", str(count))
+        s.last_fired_at = utc_now()
+        session.add(s)
+        session.commit()
+
+        result.append(ScheduledSummaryFired(
+            id=s.id, name=s.name, message=message, count=count,
+        ))
+
+    return result

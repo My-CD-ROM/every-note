@@ -206,6 +206,20 @@ def init_db():
         )
     """)
 
+    # Scheduled summaries
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS scheduled_summaries (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            folder_id TEXT REFERENCES folders(id) ON DELETE SET NULL,
+            cron_expression TEXT NOT NULL,
+            message_template TEXT NOT NULL DEFAULT 'You have {count} tasks',
+            last_fired_at TEXT,
+            is_active INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+        )
+    """)
+
     # ALTER TABLE migrations for new columns on existing tables
     migrations = [
         ("notes", "is_daily", "ALTER TABLE notes ADD COLUMN is_daily INTEGER NOT NULL DEFAULT 0"),
@@ -272,6 +286,29 @@ def init_db():
                 VALUES (new.rowid, new.title, new.content);
             END;
         """)
+
+    # Seed default scheduled summaries if table is empty
+    count = conn.execute("SELECT COUNT(*) FROM scheduled_summaries").fetchone()[0]
+    if count == 0:
+        from app.models import generate_ulid
+        now = conn.execute("SELECT strftime('%Y-%m-%dT%H:%M:%fZ', 'now')").fetchone()[0]
+        # Find the "weekend" folder
+        weekend = conn.execute("SELECT id FROM folders WHERE LOWER(name) = 'weekend' LIMIT 1").fetchone()
+        weekend_id = weekend[0] if weekend else None
+        summaries = [
+            # Weekend: Friday 18:00
+            (generate_ulid(), "Weekend (Friday)", weekend_id, "0 18 * * 5", "You have {count} tasks for the weekend", now),
+            # Weekend: Saturday 09:00
+            (generate_ulid(), "Weekend (Saturday)", weekend_id, "0 9 * * 6", "You have {count} tasks for the weekend", now),
+            # Weekend: Sunday 09:00
+            (generate_ulid(), "Weekend (Sunday)", weekend_id, "0 9 * * 0", "You have {count} tasks for the weekend", now),
+            # Daily: every day 09:00
+            (generate_ulid(), "Daily", None, "0 9 * * *", "You have {count} tasks for today", now),
+        ]
+        conn.executemany(
+            "INSERT INTO scheduled_summaries (id, name, folder_id, cron_expression, message_template, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            summaries,
+        )
 
     conn.commit()
     conn.close()

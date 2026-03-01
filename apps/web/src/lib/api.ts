@@ -1,5 +1,6 @@
 import type {
   NoteResponse,
+  RecurrenceRule,
   FolderResponse,
   FolderTree,
   TagResponse,
@@ -14,6 +15,7 @@ import type {
 // Re-export all shared types so existing imports from '@/lib/api' keep working
 export type {
   TagBrief,
+  RecurrenceRule,
   NoteResponse,
   FolderResponse,
   FolderTree,
@@ -59,10 +61,10 @@ export const notesApi = {
   get(id: string) {
     return request<NoteResponse>(`/notes/${id}`);
   },
-  create(data: { title?: string; content?: string; folder_id?: string | null; note_type?: string; parent_id?: string | null; status?: string | null; project_id?: string | null }) {
+  create(data: { title?: string; content?: string; folder_id?: string | null; note_type?: string; parent_id?: string | null; status?: string | null; project_id?: string | null; recurrence_rule?: RecurrenceRule | null }) {
     return request<NoteResponse>('/notes', { method: 'POST', body: JSON.stringify(data) });
   },
-  update(id: string, data: { title?: string; content?: string; folder_id?: string | null; position?: number; is_pinned?: boolean; due_at?: string | null; note_type?: string; parent_id?: string | null; status?: string | null; project_id?: string | null }) {
+  update(id: string, data: { title?: string; content?: string; folder_id?: string | null; position?: number; is_pinned?: boolean; due_at?: string | null; note_type?: string; parent_id?: string | null; status?: string | null; project_id?: string | null; recurrence_rule?: RecurrenceRule | null }) {
     return request<NoteResponse>(`/notes/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
   },
   setStatus(id: string, status: string | null) {
@@ -100,6 +102,9 @@ export const notesApi = {
   },
   backlinks(noteId: string) {
     return request<BacklinkResponse[]>(`/notes/${noteId}/backlinks`);
+  },
+  removeRecurrence(id: string) {
+    return request<NoteResponse>(`/notes/${id}/recurrence`, { method: 'DELETE' });
   },
   reorder(items: { id: string; position: number }[]) {
     return request<{ ok: boolean }>('/notes/reorder', { method: 'POST', body: JSON.stringify({ items }) });

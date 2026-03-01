@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { NoteResponse } from '@/lib/api';
+import type { NoteResponse, RecurrenceRule } from '@/lib/api';
 import { notesApi } from '@/lib/api';
 
 interface NotesState {
@@ -10,7 +10,7 @@ interface NotesState {
   fetchNotes: (params?: { folder_id?: string; tag_id?: string; trashed?: boolean; pinned?: boolean; completed?: boolean; project_id?: string }) => Promise<void>;
   setActiveNote: (id: string | null) => void;
   createNote: (data: { title?: string; content?: string; folder_id?: string | null; note_type?: string; parent_id?: string | null; project_id?: string | null }) => Promise<NoteResponse>;
-  updateNote: (id: string, data: { title?: string; content?: string; folder_id?: string | null; is_pinned?: boolean; due_at?: string | null; note_type?: string; parent_id?: string | null; status?: string | null; project_id?: string | null }) => Promise<void>;
+  updateNote: (id: string, data: { title?: string; content?: string; folder_id?: string | null; is_pinned?: boolean; due_at?: string | null; note_type?: string; parent_id?: string | null; status?: string | null; project_id?: string | null; recurrence_rule?: RecurrenceRule | null }) => Promise<void>;
   deleteNote: (id: string, permanent?: boolean) => Promise<void>;
   restoreNote: (id: string) => Promise<void>;
   completeNote: (id: string) => Promise<void>;

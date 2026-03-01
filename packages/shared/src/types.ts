@@ -4,6 +4,11 @@ export interface TagBrief {
   color: string;
 }
 
+export interface RecurrenceRule {
+  freq: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  interval: number;
+}
+
 export interface NoteResponse {
   id: string;
   title: string;
@@ -22,6 +27,8 @@ export interface NoteResponse {
   parent_id: string | null;
   status: string | null;
   project_id: string | null;
+  recurrence_rule: RecurrenceRule | null;
+  recurrence_source_id: string | null;
   created_at: string;
   updated_at: string;
   tags: TagBrief[];

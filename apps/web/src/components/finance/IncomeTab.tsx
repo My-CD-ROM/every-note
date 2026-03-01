@@ -68,28 +68,23 @@ export function IncomeTab() {
   ];
 
   return (
-    <div className="overflow-auto">
+    <div className="space-y-4">
+      {/* Monthly table — no horizontal scroll needed */}
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="border-b">
-            <th className="text-left px-2 py-2 font-medium text-muted-foreground min-w-[140px] sticky left-0 bg-background z-10" />
+            <th className="text-left px-2 py-2 font-medium text-muted-foreground min-w-[140px]" />
             {MONTHS.map((m) => (
-              <th key={m} className="text-right px-2 py-2 font-medium text-muted-foreground min-w-[90px]">
+              <th key={m} className="text-right px-2 py-2 font-medium text-muted-foreground">
                 {m}
               </th>
             ))}
-            {quarters.map((q) => (
-              <th key={q.label} className="text-right px-2 py-2 font-medium text-muted-foreground/80 min-w-[100px] bg-muted/30">
-                {q.label}
-              </th>
-            ))}
-            <th className="text-right px-2 py-2 font-semibold text-muted-foreground min-w-[100px]">Total</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
             <tr key={row.label} className="border-b hover:bg-muted/30">
-              <td className="px-2 py-1 font-medium sticky left-0 bg-background z-10">{row.label}</td>
+              <td className="px-2 py-1 font-medium">{row.label}</td>
               {MONTHS.map((_, i) => (
                 <td key={i} className="px-0 py-0">
                   {row.editable ? (
@@ -104,8 +99,30 @@ export function IncomeTab() {
                   )}
                 </td>
               ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {/* Quarterly + Total summary */}
+      <table className="border-collapse text-sm">
+        <thead>
+          <tr className="border-b">
+            <th className="text-left px-2 py-2 font-medium text-muted-foreground min-w-[140px]" />
+            {quarters.map((q) => (
+              <th key={q.label} className="text-right px-2 py-2 font-medium text-muted-foreground min-w-[110px]">
+                {q.label}
+              </th>
+            ))}
+            <th className="text-right px-2 py-2 font-semibold text-muted-foreground min-w-[110px]">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.label} className="border-b hover:bg-muted/30">
+              <td className="px-2 py-1 font-medium">{row.label}</td>
               {quarters.map((q) => (
-                <td key={q.label} className="px-2 py-1 text-right tabular-nums bg-muted/30 font-medium">
+                <td key={q.label} className="px-2 py-1 text-right tabular-nums font-medium">
                   {fmt(sumRange(row.getValue, q.from, q.to))}
                 </td>
               ))}

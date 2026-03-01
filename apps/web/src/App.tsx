@@ -14,6 +14,7 @@ import { Menu, Plus, FileText } from 'lucide-react';
 import { useNotesStore } from '@/stores/notes-store';
 import { useUIStore } from '@/stores/ui-store';
 import { useFoldersStore } from '@/stores/folders-store';
+import { useProjectsStore } from '@/stores/projects-store';
 
 const VIEW_TITLES: Record<string, string> = {
   all: 'All Notes',
@@ -31,6 +32,9 @@ function TopBar() {
   const { createNote } = useNotesStore();
   const { setMobileSidebarOpen, view } = useUIStore();
   const activeFolderId = useFoldersStore((s) => s.activeFolderId);
+  const { activeProjectId, projects } = useProjectsStore();
+
+  const activeProject = view === 'board' ? projects.find((p) => p.id === activeProjectId) : null;
 
   const handleTemplateCreate = async (data: { title: string; content: string; note_type?: string }) => {
     await createNote({
@@ -50,7 +54,7 @@ function TopBar() {
           <Menu className="h-4 w-4" />
         </Button>
         <h2 className="text-sm font-semibold">
-          {VIEW_TITLES[view] ?? 'Notes'}
+          {activeProject ? `${activeProject.icon ? activeProject.icon + ' ' : ''}${activeProject.name}` : VIEW_TITLES[view] ?? 'Notes'}
         </h2>
       </div>
       {showCreateButton && (

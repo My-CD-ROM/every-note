@@ -10,11 +10,12 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
-import { CalendarClock, Check, CheckCircle2, GripVertical, ListChecks, Star } from 'lucide-react';
+import { CalendarClock, Check, CheckCircle2, GripVertical, LayoutDashboard, ListChecks, Star } from 'lucide-react';
 import { checklistProgressFromContent } from '@/lib/checklist';
 import { STATUSES } from '@/lib/statuses';
 import { cn } from '@/lib/utils';
 import { useNotesStore } from '@/stores/notes-store';
+import { useProjectsStore } from '@/stores/projects-store';
 import { notesApi } from '@/lib/api';
 import type { NoteResponse } from '@/lib/api';
 
@@ -198,13 +199,13 @@ function DraggableNoteCard({ note }: { note: NoteResponse }) {
   );
 }
 
-function QuickAddInput({ status }: { status: string }) {
+function QuickAddInput({ status, projectId }: { status: string; projectId: string | null }) {
   const [title, setTitle] = useState('');
   const { createNote } = useNotesStore();
 
   const handleSubmit = async () => {
     if (!title.trim()) return;
-    await createNote({ title: title.trim(), status });
+    await createNote({ title: title.trim(), status, project_id: projectId });
     setTitle('');
   };
 
@@ -219,7 +220,7 @@ function QuickAddInput({ status }: { status: string }) {
   );
 }
 
-function DroppableColumn({ column, isOver }: { column: StatusColumn; isOver: boolean }) {
+function DroppableColumn({ column, isOver, projectId }: { column: StatusColumn; isOver: boolean; projectId: string | null }) {
   return (
     <div className={cn(
       'flex-shrink-0 w-72 flex flex-col max-h-full rounded-xl p-3 transition-all',
@@ -242,12 +243,12 @@ function DroppableColumn({ column, isOver }: { column: StatusColumn; isOver: boo
           <DraggableNoteCard key={note.id} note={note} />
         ))}
       </div>
-      <QuickAddInput status={column.id} />
+      <QuickAddInput status={column.id} projectId={projectId} />
     </div>
   );
 }
 
-function DroppableColumnWrapper({ column }: { column: StatusColumn }) {
+function DroppableColumnWrapper({ column, projectId }: { column: StatusColumn; projectId: string | null }) {
   const { setNodeRef, isOver } = useDroppable({
     id: `status-${column.id}`,
     data: { status: column.id },
@@ -255,20 +256,29 @@ function DroppableColumnWrapper({ column }: { column: StatusColumn }) {
 
   return (
     <div ref={setNodeRef} className="flex-shrink-0">
-      <DroppableColumn column={column} isOver={isOver} />
+      <DroppableColumn column={column} isOver={isOver} projectId={projectId} />
     </div>
   );
 }
 
 export function BoardView() {
   const { notes, fetchNotes } = useNotesStore();
+  const { activeProjectId, projects } = useProjectsStore();
   const [activeDragNote, setActiveDragNote] = useState<NoteResponse | null>(null);
+
+  const activeProject = projects.find((p) => p.id === activeProjectId);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
 
-  // Board shows all notes — assign status 'backlog' to notes without one
+  useEffect(() => {
+    if (activeProjectId) {
+      fetchNotes({ project_id: activeProjectId });
+    }
+  }, [activeProjectId, fetchNotes]);
+
+  // Board shows project notes — assign status 'backlog' to notes without one
   const columns = useMemo<StatusColumn[]>(() => {
     const byStatus = new Map<string, NoteResponse[]>();
     for (const s of STATUSES) {
@@ -321,14 +331,18 @@ export function BoardView() {
     try {
       await notesApi.setStatus(noteId, targetStatus);
     } catch {
-      fetchNotes(); // Revert on error
+      if (activeProjectId) fetchNotes({ project_id: activeProjectId });
     }
-  }, [notes, fetchNotes]);
+  }, [notes, fetchNotes, activeProjectId]);
 
-  if (notes.length === 0) {
+  if (!activeProjectId) {
     return (
-      <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
-        No notes yet. Create one with the + input below each column.
+      <div className="flex h-full flex-col items-center justify-center text-muted-foreground gap-2">
+        <LayoutDashboard className="h-10 w-10 stroke-1" />
+        <div className="text-center text-sm">
+          <p>No project selected</p>
+          <p className="text-xs text-muted-foreground/60">Select a project from the sidebar or create one</p>
+        </div>
       </div>
     );
   }
@@ -341,7 +355,7 @@ export function BoardView() {
     >
       <div className="flex gap-4 p-4 overflow-x-auto h-full items-start">
         {columns.map((col) => (
-          <DroppableColumnWrapper key={col.id} column={col} />
+          <DroppableColumnWrapper key={col.id} column={col} projectId={activeProjectId} />
         ))}
       </div>
       <DragOverlay>

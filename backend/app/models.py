@@ -114,3 +114,57 @@ class NoteVersion(SQLModel, table=True):
     title: str = Field(default="")
     content: str = Field(default="")
     created_at: str = Field(default_factory=utc_now)
+
+
+class SpendingCategory(SQLModel, table=True):
+    __tablename__ = "spending_categories"
+    id: str = Field(default_factory=generate_ulid, primary_key=True)
+    name: str
+    position: float = Field(default=0)
+    created_at: str = Field(default_factory=utc_now)
+
+
+class SpendingEntry(SQLModel, table=True):
+    __tablename__ = "spending_entries"
+    id: str = Field(default_factory=generate_ulid, primary_key=True)
+    category_id: str = Field(foreign_key="spending_categories.id", index=True)
+    year: int
+    month: int
+    amount: float = Field(default=0)
+
+
+class IncomeEntry(SQLModel, table=True):
+    __tablename__ = "income_entries"
+    id: str = Field(default_factory=generate_ulid, primary_key=True)
+    year: int
+    month: int
+    gross: float = Field(default=0)
+
+
+class UtilityAddress(SQLModel, table=True):
+    __tablename__ = "utility_addresses"
+    id: str = Field(default_factory=generate_ulid, primary_key=True)
+    name: str
+    position: float = Field(default=0)
+    created_at: str = Field(default_factory=utc_now)
+
+
+class MeterReading(SQLModel, table=True):
+    __tablename__ = "meter_readings"
+    id: str = Field(default_factory=generate_ulid, primary_key=True)
+    address_id: str = Field(foreign_key="utility_addresses.id", index=True)
+    utility_type: str  # 'gas' | 'water'
+    year: int
+    month: int
+    reading: float = Field(default=0)
+
+
+class BalanceEntry(SQLModel, table=True):
+    __tablename__ = "balance_entries"
+    id: str = Field(default_factory=generate_ulid, primary_key=True)
+    name: str
+    position: float = Field(default=0)
+    uah: float = Field(default=0)
+    usd: float = Field(default=0)
+    eur: float = Field(default=0)
+    created_at: str = Field(default_factory=utc_now)

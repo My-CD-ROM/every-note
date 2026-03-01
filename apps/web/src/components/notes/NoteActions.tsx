@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowUpFromDot, Circle, CornerDownRight, MoreHorizontal, FolderIcon, Tag, Undo2, Trash2, Download, CheckCircle2 } from 'lucide-react';
+import { ArrowUpFromDot, Circle, CornerDownRight, LayoutDashboard, MoreHorizontal, FolderIcon, Tag, Undo2, Trash2, Download, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -15,6 +15,7 @@ import { useNotesStore } from '@/stores/notes-store';
 import { useFoldersStore } from '@/stores/folders-store';
 import { useTagsStore } from '@/stores/tags-store';
 import { useUIStore } from '@/stores/ui-store';
+import { useProjectsStore } from '@/stores/projects-store';
 import { notesApi, exportApi } from '@/lib/api';
 import type { FolderTree, NoteResponse } from '@/lib/api';
 import { STATUSES } from '@/lib/statuses';
@@ -33,11 +34,15 @@ export function NoteActions({ note }: { note: NoteResponse }) {
   const { tree, activeFolderId } = useFoldersStore();
   const { tags, fetchTags, activeTagId } = useTagsStore();
   const view = useUIStore((s) => s.view);
+  const { projects, fetchProjects, activeProjectId } = useProjectsStore();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    if (open) fetchTags();
-  }, [open, fetchTags]);
+    if (open) {
+      fetchTags();
+      fetchProjects();
+    }
+  }, [open, fetchTags, fetchProjects]);
 
   const folders = flattenFolders(tree);
 
@@ -128,6 +133,40 @@ export function NoteActions({ note }: { note: NoteResponse }) {
                 style={{ paddingLeft: `${f.depth * 12 + 8}px` }}
               >
                 {f.name}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+
+        {/* Move to project */}
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <LayoutDashboard className="mr-2 h-4 w-4" /> Move to project
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <DropdownMenuItem
+              onClick={async () => {
+                await updateNote(note.id, { project_id: null });
+                setOpen(false);
+              }}
+            >
+              No project
+            </DropdownMenuItem>
+            {projects.map((p) => (
+              <DropdownMenuItem
+                key={p.id}
+                onClick={async () => {
+                  await updateNote(note.id, { project_id: p.id });
+                  if (view === 'board' && activeProjectId) {
+                    fetchNotes({ project_id: activeProjectId });
+                  } else {
+                    fetchNotes();
+                  }
+                  setOpen(false);
+                }}
+              >
+                {p.icon ? `${p.icon} ` : ''}{p.name}
+                {note.project_id === p.id && <span className="ml-auto text-xs">✓</span>}
               </DropdownMenuItem>
             ))}
           </DropdownMenuSubContent>

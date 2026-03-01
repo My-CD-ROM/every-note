@@ -121,7 +121,7 @@ def list_notes(
         query = query.where(Note.parent_id == None)  # noqa: E711
 
     if completed is True:
-        query = query.where(Note.is_completed == True)  # noqa: E712
+        query = query.where(Note.is_completed == True, Note.project_id == None)  # noqa: E711, E712
     elif not trashed:
         # Default: exclude completed notes from normal views
         query = query.where(Note.is_completed == False)  # noqa: E712

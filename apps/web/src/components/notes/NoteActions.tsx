@@ -293,9 +293,11 @@ export function NoteActions({ note }: { note: NoteResponse }) {
           </a>
         </DropdownMenuItem>
 
-        <DropdownMenuItem onClick={() => completeNote(note.id)}>
-          <CheckCircle2 className="mr-2 h-4 w-4" /> Mark Complete
-        </DropdownMenuItem>
+        {!note.project_id && (
+          <DropdownMenuItem onClick={() => completeNote(note.id)}>
+            <CheckCircle2 className="mr-2 h-4 w-4" /> Mark Complete
+          </DropdownMenuItem>
+        )}
 
         <DropdownMenuItem
           className="text-red-500"

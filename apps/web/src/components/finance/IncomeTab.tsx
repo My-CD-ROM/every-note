@@ -59,12 +59,12 @@ export function IncomeTab() {
   type Row = { label: string; getValue: (month: number) => number; editable: boolean };
 
   const rows: Row[] = [
-    { label: 'Брутто', getValue: getGross, editable: true },
-    { label: `ЄП (${rates.epRate * 100}%)`, getValue: getEP, editable: false },
-    { label: `ВЗ (${rates.vzRate * 100}%)`, getValue: getVZ, editable: false },
-    { label: `ЄСВ (${rates.esv})`, getValue: getESV, editable: false },
-    { label: 'Всього податків', getValue: getTotalTax, editable: false },
-    { label: 'Нетто', getValue: getNet, editable: false },
+    { label: 'Gross', getValue: getGross, editable: true },
+    { label: `Single Tax (${rates.epRate * 100}%)`, getValue: getEP, editable: false },
+    { label: `Military Levy (${rates.vzRate * 100}%)`, getValue: getVZ, editable: false },
+    { label: `Social Contrib (${rates.esv})`, getValue: getESV, editable: false },
+    { label: 'Total Taxes', getValue: getTotalTax, editable: false },
+    { label: 'Net', getValue: getNet, editable: false },
   ];
 
   return (

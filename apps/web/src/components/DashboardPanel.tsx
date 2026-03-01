@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { useNotesStore } from '@/stores/notes-store';
 import { useFoldersStore } from '@/stores/folders-store';
 import { useUIStore } from '@/stores/ui-store';
-import { notesApi } from '@/lib/api';
 
 export function DashboardPanel() {
   const { notes, createNote, setActiveNote } = useNotesStore();
@@ -32,21 +31,6 @@ export function DashboardPanel() {
     if (h < 12) return 'Good morning';
     if (h < 18) return 'Good afternoon';
     return 'Good evening';
-  };
-
-  const handleOpenNote = async (noteId: string) => {
-    try {
-      const fullNote = await notesApi.get(noteId);
-      useNotesStore.setState((s) => {
-        const exists = s.notes.some((n) => n.id === noteId);
-        return {
-          notes: exists ? s.notes.map((n) => (n.id === noteId ? fullNote : n)) : [fullNote, ...s.notes],
-          activeNoteId: noteId,
-        };
-      });
-    } catch {
-      setActiveNote(noteId);
-    }
   };
 
   const formatDate = (iso: string) => {
@@ -116,7 +100,7 @@ export function DashboardPanel() {
               {recentNotes.map((note) => (
                 <button
                   key={note.id}
-                  onClick={() => handleOpenNote(note.id)}
+                  onClick={() => setActiveNote(note.id)}
                   className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-left hover:bg-muted/50 transition-colors group"
                 >
                   <Calendar className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />

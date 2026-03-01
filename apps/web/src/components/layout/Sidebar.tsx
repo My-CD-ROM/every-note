@@ -106,9 +106,11 @@ function FolderNode({ folder, depth = 0 }: { folder: FolderTree; depth?: number 
   return (
     <div>
       <div className="group flex items-center">
-        <button
+        <div
+          role="button"
+          tabIndex={0}
           className={cn(
-            'flex flex-1 items-center gap-1 rounded-lg px-2 py-1.5 text-sm transition-colors',
+            'flex flex-1 items-center gap-1 rounded-lg px-2 py-1.5 text-sm transition-colors cursor-pointer',
             'hover:bg-sidebar-accent',
             isActive && 'bg-sidebar-accent font-medium'
           )}
@@ -120,6 +122,7 @@ function FolderNode({ folder, depth = 0 }: { folder: FolderTree; depth?: number 
             setActiveNote(null);
             fetchNotes({ folder_id: folder.id });
           }}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setActiveFolder(folder.id); setActiveTag(null); setView('folder'); setActiveNote(null); fetchNotes({ folder_id: folder.id }); } }}
         >
           {hasChildren ? (
             <ChevronRight
@@ -137,7 +140,7 @@ function FolderNode({ folder, depth = 0 }: { folder: FolderTree; depth?: number 
           {folder.note_count > 0 && (
             <span className="ml-auto text-xs text-muted-foreground/60">{folder.note_count}</span>
           )}
-        </button>
+        </div>
         <a
           href={exportApi.folderUrl(folder.id)}
           download

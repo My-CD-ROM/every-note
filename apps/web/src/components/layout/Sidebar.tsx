@@ -1,17 +1,20 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
+  ArrowDown,
+  ArrowUp,
   CalendarDays,
   CheckCircle2,
+  ChevronDown,
   ChevronRight,
-  Download,
   FileText,
   FolderIcon,
+  Home,
   LayoutDashboard,
-  Network,
+  MoreHorizontal,
+  Pencil,
   Plus,
   Search,
   Star,
-  Tag,
   Trash2,
   Sun,
   Moon,
@@ -19,16 +22,21 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { useFoldersStore } from '@/stores/folders-store';
 import { useTagsStore } from '@/stores/tags-store';
 import { useNotesStore } from '@/stores/notes-store';
 import { useProjectsStore } from '@/stores/projects-store';
 import { useUIStore } from '@/stores/ui-store';
-import { exportApi } from '@/lib/api';
+import { foldersApi } from '@/lib/api';
 import type { FolderTree } from '@/lib/api';
 
 const TAG_COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
@@ -90,18 +98,49 @@ function EmojiPicker({ value, onChange }: { value: string | null; onChange: (emo
   );
 }
 
-function FolderNode({ folder, depth = 0 }: { folder: FolderTree; depth?: number }) {
+function FolderNode({ folder, depth = 0, onMoveUp, onMoveDown }: { folder: FolderTree; depth?: number; onMoveUp?: () => void; onMoveDown?: () => void }) {
   const [expanded, setExpanded] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [renameName, setRenameName] = useState(folder.name);
   const activeFolderId = useFoldersStore((s) => s.activeFolderId);
   const setActiveFolder = useFoldersStore((s) => s.setActiveFolder);
   const updateFolder = useFoldersStore((s) => s.updateFolder);
-  const setView = useUIStore((s) => s.setView);
+  const deleteFolder = useFoldersStore((s) => s.deleteFolder);
+  const { setView, setMobileSidebarOpen: closeMobile } = useUIStore();
   const fetchNotes = useNotesStore((s) => s.fetchNotes);
   const setActiveNote = useNotesStore((s) => s.setActiveNote);
   const setActiveTag = useTagsStore((s) => s.setActiveTag);
 
   const isActive = activeFolderId === folder.id;
   const hasChildren = folder.children.length > 0;
+
+  const handleRename = async () => {
+    const trimmed = renameName.trim();
+    if (trimmed && trimmed !== folder.name) {
+      await updateFolder(folder.id, { name: trimmed });
+    }
+    setRenaming(false);
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm(`Delete folder "${folder.name}"? Notes inside will be unlinked.`)) return;
+    if (activeFolderId === folder.id) {
+      setActiveFolder(null);
+      setView('all');
+      fetchNotes();
+    }
+    await deleteFolder(folder.id);
+  };
+
+  const handleNav = () => {
+    if (renaming) return;
+    setActiveFolder(folder.id);
+    setActiveTag(null);
+    setView('folder');
+    setActiveNote(null);
+    closeMobile(false);
+    fetchNotes({ folder_id: folder.id });
+  };
 
   return (
     <div>
@@ -115,14 +154,8 @@ function FolderNode({ folder, depth = 0 }: { folder: FolderTree; depth?: number 
             isActive && 'bg-sidebar-accent font-medium'
           )}
           style={{ paddingLeft: `${depth * 12 + 8}px` }}
-          onClick={() => {
-            setActiveFolder(folder.id);
-            setActiveTag(null);
-            setView('folder');
-            setActiveNote(null);
-            fetchNotes({ folder_id: folder.id });
-          }}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setActiveFolder(folder.id); setActiveTag(null); setView('folder'); setActiveNote(null); fetchNotes({ folder_id: folder.id }); } }}
+          onClick={handleNav}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleNav(); } }}
         >
           {hasChildren ? (
             <ChevronRight
@@ -136,19 +169,63 @@ function FolderNode({ folder, depth = 0 }: { folder: FolderTree; depth?: number 
             value={folder.icon}
             onChange={(emoji) => updateFolder(folder.id, { icon: emoji })}
           />
-          <span className="truncate">{folder.name}</span>
-          {folder.note_count > 0 && (
-            <span className="ml-auto text-xs text-muted-foreground/60">{folder.note_count}</span>
+          {renaming ? (
+            <Input
+              value={renameName}
+              onChange={(e) => setRenameName(e.target.value)}
+              onKeyDown={(e) => {
+                e.stopPropagation();
+                if (e.key === 'Enter') handleRename();
+                if (e.key === 'Escape') { setRenaming(false); setRenameName(folder.name); }
+              }}
+              onBlur={handleRename}
+              className="h-5 text-sm px-1 py-0"
+              autoFocus
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <>
+              <span className="truncate">{folder.name}</span>
+              {folder.note_count > 0 && (
+                <span className="ml-auto text-xs text-muted-foreground/60">{folder.note_count}</span>
+              )}
+            </>
           )}
         </div>
-        <a
-          href={exportApi.folderUrl(folder.id)}
-          download
-          className="mr-1 opacity-0 group-hover:opacity-100"
-          title="Export folder as .zip"
-        >
-          <Download className="h-3 w-3 text-muted-foreground hover:text-foreground" />
-        </a>
+        <div className="flex items-center mr-1 opacity-0 group-hover:opacity-100">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="h-5 w-5 flex items-center justify-center rounded hover:bg-sidebar-accent"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
+              <DropdownMenuItem onClick={() => { setRenaming(true); setRenameName(folder.name); }}>
+                <Pencil className="h-3.5 w-3.5 mr-2" />
+                Rename
+              </DropdownMenuItem>
+              {onMoveUp && (
+                <DropdownMenuItem onClick={onMoveUp}>
+                  <ArrowUp className="h-3.5 w-3.5 mr-2" />
+                  Move up
+                </DropdownMenuItem>
+              )}
+              {onMoveDown && (
+                <DropdownMenuItem onClick={onMoveDown}>
+                  <ArrowDown className="h-3.5 w-3.5 mr-2" />
+                  Move down
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+                <Trash2 className="h-3.5 w-3.5 mr-2" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
       {expanded && hasChildren && (
         <div>
@@ -183,12 +260,143 @@ function NavItem({ icon: Icon, label, active, iconColor, onClick }: {
   );
 }
 
+function CollapsibleSection({ label, open, onToggle, action, children }: {
+  label: string;
+  open: boolean;
+  onToggle: () => void;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="mt-2">
+      <div className="mb-0.5 flex items-center gap-1 px-2">
+        <button
+          className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+          onClick={onToggle}
+        >
+          <ChevronDown className={cn('h-3 w-3 transition-transform', !open && '-rotate-90')} />
+          <span className="uppercase tracking-wider">{label}</span>
+        </button>
+        <div className="flex-1" />
+        {action}
+      </div>
+      {open && children}
+    </div>
+  );
+}
+
+function SectionHeader({ label, action }: { label: string; action?: React.ReactNode }) {
+  return (
+    <div className="mt-4 mb-1 flex items-center gap-2 px-2">
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">{label}</span>
+      <div className="flex-1 border-t border-border/40" />
+      {action}
+    </div>
+  );
+}
+
+function ProjectItem({ project }: { project: { id: string; name: string; icon?: string | null; note_count: number } }) {
+  const [renaming, setRenaming] = useState(false);
+  const [renameName, setRenameName] = useState(project.name);
+  const { activeProjectId, setActiveProject, updateProject, deleteProject } = useProjectsStore();
+  const setActiveFolder = useFoldersStore((s) => s.setActiveFolder);
+  const setActiveTag = useTagsStore((s) => s.setActiveTag);
+  const { setActiveNote, fetchNotes } = useNotesStore();
+  const { setView, setMobileSidebarOpen: closeMobile, view } = useUIStore();
+
+  const isActive = view === 'board' && activeProjectId === project.id;
+
+  const handleRename = async () => {
+    const trimmed = renameName.trim();
+    if (trimmed && trimmed !== project.name) {
+      await updateProject(project.id, { name: trimmed });
+    }
+    setRenaming(false);
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm(`Delete project "${project.name}"? Notes will be unlinked from the project.`)) return;
+    if (activeProjectId === project.id) {
+      setActiveProject(null);
+      setView('all');
+      fetchNotes();
+    }
+    await deleteProject(project.id);
+  };
+
+  return (
+    <div className="group flex items-center">
+      <button
+        className={cn(
+          'flex flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors',
+          'hover:bg-sidebar-accent',
+          isActive && 'bg-sidebar-accent font-medium'
+        )}
+        onClick={() => {
+          if (renaming) return;
+          setActiveProject(project.id);
+          setActiveFolder(null);
+          setActiveTag(null);
+          setActiveNote(null);
+          setView('board');
+          closeMobile(false);
+          fetchNotes({ project_id: project.id });
+        }}
+      >
+        <LayoutDashboard className="h-4 w-4 shrink-0" style={{ color: '#E74C3C' }} />
+        {renaming ? (
+          <Input
+            value={renameName}
+            onChange={(e) => setRenameName(e.target.value)}
+            onKeyDown={(e) => {
+              e.stopPropagation();
+              if (e.key === 'Enter') handleRename();
+              if (e.key === 'Escape') { setRenaming(false); setRenameName(project.name); }
+            }}
+            onBlur={handleRename}
+            className="h-5 text-sm px-1 py-0"
+            autoFocus
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <>
+            <span className="truncate">{project.icon ? `${project.icon} ` : ''}{project.name}</span>
+            {project.note_count > 0 && (
+              <span className="ml-auto text-xs text-muted-foreground/60">{project.note_count}</span>
+            )}
+          </>
+        )}
+      </button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            className="mr-1 h-5 w-5 flex items-center justify-center rounded hover:bg-sidebar-accent opacity-0 group-hover:opacity-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
+          <DropdownMenuItem onClick={() => { setRenaming(true); setRenameName(project.name); }}>
+            <Pencil className="h-3.5 w-3.5 mr-2" />
+            Rename
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+            <Trash2 className="h-3.5 w-3.5 mr-2" />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
+
 export function Sidebar() {
   const { tree, fetchTree } = useFoldersStore();
   const { tags, fetchTags, activeTagId, setActiveTag, createTag } = useTagsStore();
   const { fetchNotes, setActiveNote } = useNotesStore();
-  const { projects, fetchProjects, activeProjectId, setActiveProject, createProject } = useProjectsStore();
-  const { theme, toggleTheme, setView, setSearchOpen, view } = useUIStore();
+  const { projects, fetchProjects, createProject } = useProjectsStore();
+  const { theme, toggleTheme, setView, setSearchOpen, setMobileSidebarOpen, view } = useUIStore();
   const setActiveFolder = useFoldersStore((s) => s.setActiveFolder);
 
   const [newFolderName, setNewFolderName] = useState('');
@@ -197,7 +405,16 @@ export function Sidebar() {
   const [showNewTag, setShowNewTag] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
   const [showNewProject, setShowNewProject] = useState(false);
+  const [sections, setSections] = useState<Record<string, boolean>>({
+    folders: false,
+    tags: false,
+    projects: false,
+  });
   const createFolder = useFoldersStore((s) => s.createFolder);
+
+  const toggleSection = useCallback((key: string) => {
+    setSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  }, []);
 
   useEffect(() => {
     fetchTree();
@@ -232,11 +449,27 @@ export function Sidebar() {
     fetchNotes({ project_id: project.id });
   };
 
+  const handleMoveFolder = useCallback(async (index: number, direction: -1 | 1) => {
+    const swapIdx = index + direction;
+    if (swapIdx < 0 || swapIdx >= tree.length) return;
+    const a = tree[index];
+    const b = tree[swapIdx];
+    // Swap positions
+    const posA = b.position ?? swapIdx;
+    const posB = a.position ?? index;
+    await foldersApi.reorder([
+      { id: a.id, position: posA },
+      { id: b.id, position: posB },
+    ]);
+    fetchTree();
+  }, [tree, fetchTree]);
+
   const nav = (v: typeof view, fetchParams?: Parameters<typeof fetchNotes>[0]) => {
     setActiveFolder(null);
     setActiveTag(null);
     setView(v);
     setActiveNote(null);
+    setMobileSidebarOpen(false);
     if (fetchParams !== undefined) {
       fetchNotes(fetchParams);
     } else {
@@ -248,7 +481,10 @@ export function Sidebar() {
     <div className="flex h-full w-64 flex-col border-r bg-sidebar text-sidebar-foreground">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3">
-        <h1 className="text-base font-bold tracking-tight">Every Note</h1>
+        <button className="flex items-center gap-2" onClick={() => nav('home')}>
+          <img src="/logo.svg" alt="" className="h-5 w-5" />
+          <h1 className="text-base font-bold tracking-tight">Every Note</h1>
+        </button>
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleTheme}>
           {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
@@ -268,186 +504,152 @@ export function Sidebar() {
       </div>
 
       <ScrollArea className="flex-1 px-3">
-        {/* Navigation */}
+        <div className="space-y-0.5 mb-1">
+          <NavItem icon={Home} label="Home" active={view === 'home'} onClick={() => nav('home')} />
+        </div>
+
+        {/* ── NOTES ── */}
+        <SectionHeader label="Notes" />
         <div className="space-y-0.5">
           <NavItem icon={FileText} label="All Notes" active={view === 'all'} onClick={() => nav('all')} />
           <NavItem icon={Star} label="Favorites" active={view === 'favorites'} iconColor="#f59e0b" onClick={() => nav('favorites', { pinned: true })} />
-          <NavItem icon={CalendarDays} label="Calendar" active={view === 'daily'} iconColor="#3b82f6" onClick={() => { setActiveFolder(null); setActiveTag(null); setActiveNote(null); setView('daily'); }} />
-          <NavItem icon={Network} label="Graph View" active={view === 'graph'} iconColor="#6366f1" onClick={() => { setActiveFolder(null); setActiveTag(null); setView('graph'); setActiveNote(null); }} />
         </div>
 
-        <Separator className="my-3" />
+        {/* Folders (collapsible) */}
+        <CollapsibleSection
+          label="Folders"
+          open={sections.folders}
+          onToggle={() => toggleSection('folders')}
+          action={
+            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); setShowNewFolder(!showNewFolder); setSections((p) => ({ ...p, folders: true })); }}>
+              <Plus className="h-3 w-3" />
+            </Button>
+          }
+        >
+          {showNewFolder && (
+            <div className="mb-1 px-1">
+              <Input
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCreateFolder();
+                  if (e.key === 'Escape') setShowNewFolder(false);
+                }}
+                placeholder="Folder name"
+                className="h-7 text-sm"
+                autoFocus
+              />
+            </div>
+          )}
+          {tree.map((folder, i) => (
+            <FolderNode
+              key={folder.id}
+              folder={folder}
+              onMoveUp={i > 0 ? () => handleMoveFolder(i, -1) : undefined}
+              onMoveDown={i < tree.length - 1 ? () => handleMoveFolder(i, 1) : undefined}
+            />
+          ))}
+        </CollapsibleSection>
 
-        {/* Projects (Board) */}
-        <div className="mb-1 flex items-center justify-between">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">Projects</span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-5 w-5"
-            onClick={() => setShowNewProject(!showNewProject)}
-          >
-            <Plus className="h-3 w-3" />
-          </Button>
-        </div>
-
-        {showNewProject && (
-          <div className="mb-1 px-1">
-            <Input
-              value={newProjectName}
-              onChange={(e) => setNewProjectName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleCreateProject();
-                if (e.key === 'Escape') setShowNewProject(false);
+        {/* Tags (collapsible) */}
+        <CollapsibleSection
+          label="Tags"
+          open={sections.tags}
+          onToggle={() => toggleSection('tags')}
+          action={
+            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); setShowNewTag(!showNewTag); setSections((p) => ({ ...p, tags: true })); }}>
+              <Plus className="h-3 w-3" />
+            </Button>
+          }
+        >
+          {showNewTag && (
+            <div className="mb-1 px-1">
+              <Input
+                value={newTagName}
+                onChange={(e) => setNewTagName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCreateTag();
+                  if (e.key === 'Escape') setShowNewTag(false);
+                }}
+                placeholder="Tag name"
+                className="h-7 text-sm"
+                autoFocus
+              />
+            </div>
+          )}
+          {tags.map((tag) => (
+            <button
+              key={tag.id}
+              className={cn(
+                'flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors',
+                'hover:bg-sidebar-accent',
+                activeTagId === tag.id && 'bg-sidebar-accent font-medium'
+              )}
+              onClick={() => {
+                setActiveTag(tag.id);
+                setActiveFolder(null);
+                setView('tag');
+                setActiveNote(null);
+                setMobileSidebarOpen(false);
+                fetchNotes({ tag_id: tag.id });
               }}
-              placeholder="Project name"
-              className="h-7 text-sm"
-              autoFocus
-            />
-          </div>
-        )}
+            >
+              <span
+                className="h-2.5 w-2.5 rounded-full shrink-0"
+                style={{ backgroundColor: tag.color }}
+              />
+              <span className="truncate">{tag.name}</span>
+              {tag.note_count > 0 && (
+                <span className="ml-auto text-xs text-muted-foreground/60">{tag.note_count}</span>
+              )}
+            </button>
+          ))}
+        </CollapsibleSection>
 
-        {projects.map((project) => (
-          <button
-            key={project.id}
-            className={cn(
-              'flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors',
-              'hover:bg-sidebar-accent',
-              view === 'board' && activeProjectId === project.id && 'bg-sidebar-accent font-medium'
-            )}
-            onClick={() => {
-              setActiveProject(project.id);
-              setActiveFolder(null);
-              setActiveTag(null);
-              setActiveNote(null);
-              setView('board');
-              fetchNotes({ project_id: project.id });
-            }}
-          >
-            <LayoutDashboard className="h-4 w-4" style={{ color: '#E74C3C' }} />
-            <span className="truncate">{project.icon ? `${project.icon} ` : ''}{project.name}</span>
-            {project.note_count > 0 && (
-              <span className="ml-auto text-xs text-muted-foreground/60">{project.note_count}</span>
-            )}
-          </button>
-        ))}
+        {/* ── PROJECTS (collapsible) ── */}
+        <CollapsibleSection
+          label="Projects"
+          open={sections.projects}
+          onToggle={() => toggleSection('projects')}
+          action={
+            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); setShowNewProject(!showNewProject); setSections((p) => ({ ...p, projects: true })); }}>
+              <Plus className="h-3 w-3" />
+            </Button>
+          }
+        >
+          {showNewProject && (
+            <div className="mb-1 px-1">
+              <Input
+                value={newProjectName}
+                onChange={(e) => setNewProjectName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCreateProject();
+                  if (e.key === 'Escape') setShowNewProject(false);
+                }}
+                placeholder="Project name"
+                className="h-7 text-sm"
+                autoFocus
+              />
+            </div>
+          )}
+          {projects.map((project) => (
+            <ProjectItem key={project.id} project={project} />
+          ))}
+        </CollapsibleSection>
 
-        <Separator className="my-3" />
-
-        {/* Folders */}
-        <div className="mb-1 flex items-center justify-between">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">Folders</span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-5 w-5"
-            onClick={() => setShowNewFolder(!showNewFolder)}
-          >
-            <Plus className="h-3 w-3" />
-          </Button>
+        {/* ── Bottom items ── */}
+        <div className="mt-4 space-y-0.5">
+          <NavItem icon={CalendarDays} label="Calendar" active={view === 'daily'} iconColor="#3b82f6" onClick={() => { setActiveFolder(null); setActiveTag(null); setActiveNote(null); setView('daily'); setMobileSidebarOpen(false); }} />
+          <NavItem
+            icon={Wallet}
+            label="Finance"
+            active={view === 'finance'}
+            iconColor="#7C756E"
+            onClick={() => { setActiveFolder(null); setActiveTag(null); setActiveNote(null); setView('finance'); setMobileSidebarOpen(false); }}
+          />
+          <NavItem icon={CheckCircle2} label="Completed" active={view === 'completed'} iconColor="#10b981" onClick={() => nav('completed', { completed: true })} />
+          <NavItem icon={Trash2} label="Trash" active={view === 'trash'} onClick={() => nav('trash', { trashed: true })} />
         </div>
-
-        {showNewFolder && (
-          <div className="mb-1 px-1">
-            <Input
-              value={newFolderName}
-              onChange={(e) => setNewFolderName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleCreateFolder();
-                if (e.key === 'Escape') setShowNewFolder(false);
-              }}
-              placeholder="Folder name"
-              className="h-7 text-sm"
-              autoFocus
-            />
-          </div>
-        )}
-
-        {tree.map((folder) => (
-          <FolderNode key={folder.id} folder={folder} />
-        ))}
-
-        <Separator className="my-3" />
-
-        {/* Tags */}
-        <div className="mb-1 flex items-center justify-between">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">Tags</span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-5 w-5"
-            onClick={() => setShowNewTag(!showNewTag)}
-          >
-            <Plus className="h-3 w-3" />
-          </Button>
-        </div>
-
-        {showNewTag && (
-          <div className="mb-1 px-1">
-            <Input
-              value={newTagName}
-              onChange={(e) => setNewTagName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleCreateTag();
-                if (e.key === 'Escape') setShowNewTag(false);
-              }}
-              placeholder="Tag name"
-              className="h-7 text-sm"
-              autoFocus
-            />
-          </div>
-        )}
-
-        {tags.map((tag) => (
-          <button
-            key={tag.id}
-            className={cn(
-              'flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors',
-              'hover:bg-sidebar-accent',
-              activeTagId === tag.id && 'bg-sidebar-accent font-medium'
-            )}
-            onClick={() => {
-              setActiveTag(tag.id);
-              setActiveFolder(null);
-              setView('tag');
-              setActiveNote(null);
-              fetchNotes({ tag_id: tag.id });
-            }}
-          >
-            <span
-              className="h-2.5 w-2.5 rounded-full shrink-0"
-              style={{ backgroundColor: tag.color }}
-            />
-            <span className="truncate">{tag.name}</span>
-            {tag.note_count > 0 && (
-              <span className="ml-auto text-xs text-muted-foreground/60">{tag.note_count}</span>
-            )}
-          </button>
-        ))}
-
-        <Separator className="my-3" />
-
-        {/* Finance */}
-        <NavItem
-          icon={Wallet}
-          label="Finance"
-          active={view === 'finance'}
-          iconColor="#7C756E"
-          onClick={() => {
-            setActiveFolder(null);
-            setActiveTag(null);
-            setActiveNote(null);
-            setView('finance');
-          }}
-        />
-
-        <Separator className="my-3" />
-
-        {/* Completed */}
-        <NavItem icon={CheckCircle2} label="Completed" active={view === 'completed'} iconColor="#10b981" onClick={() => nav('completed', { completed: true })} />
-
-        {/* Trash */}
-        <NavItem icon={Trash2} label="Trash" active={view === 'trash'} onClick={() => nav('trash', { trashed: true })} />
 
         <div className="h-4" />
       </ScrollArea>

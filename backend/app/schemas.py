@@ -220,6 +220,14 @@ class ReminderWithNote(BaseModel):
     is_dismissed: bool
 
 
+# --- Scheduled Summaries ---
+class ScheduledSummaryFired(BaseModel):
+    id: str
+    name: str
+    message: str
+    count: int
+
+
 # --- Attachments ---
 class AttachmentResponse(BaseModel):
     id: str

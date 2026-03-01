@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 type Theme = 'light' | 'dark';
-type View = 'all' | 'folder' | 'tag' | 'trash' | 'favorites' | 'daily' | 'graph' | 'completed' | 'board' | 'finance';
+type View = 'home' | 'all' | 'folder' | 'tag' | 'trash' | 'favorites' | 'daily' | 'graph' | 'completed' | 'board' | 'finance';
 
 interface UIState {
   theme: Theme;
@@ -40,7 +40,7 @@ export const useUIStore = create<UIState>((set) => {
     sidebarOpen: true,
     mobileSidebarOpen: false,
     searchOpen: false,
-    view: 'all',
+    view: 'home',
 
     toggleTheme: () =>
       set((s) => {

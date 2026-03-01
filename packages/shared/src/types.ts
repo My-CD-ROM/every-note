@@ -135,6 +135,13 @@ export interface ReminderWithNote {
   is_dismissed: boolean;
 }
 
+export interface ScheduledSummaryFired {
+  id: string;
+  name: string;
+  message: string;
+  count: number;
+}
+
 export interface AttachmentResponse {
   id: string;
   note_id: string;

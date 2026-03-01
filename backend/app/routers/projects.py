@@ -18,7 +18,7 @@ def list_projects(session: S):
     for p in projects:
         count = session.exec(
             select(func.count()).select_from(Note).where(
-                Note.project_id == p.id, Note.is_trashed == False  # noqa: E712
+                Note.project_id == p.id, Note.is_trashed == False, Note.is_completed == False  # noqa: E712
             )
         ).one()
         result.append(ProjectResponse(**p.model_dump(), note_count=count))
@@ -56,7 +56,7 @@ def update_project(project_id: str, data: ProjectUpdate, session: S):
 
     count = session.exec(
         select(func.count()).select_from(Note).where(
-            Note.project_id == project_id, Note.is_trashed == False  # noqa: E712
+            Note.project_id == project_id, Note.is_trashed == False, Note.is_completed == False  # noqa: E712
         )
     ).one()
     return ProjectResponse(**project.model_dump(), note_count=count)

@@ -4,6 +4,7 @@ import type {
   AttachmentResponse,
   ReminderResponse,
   ReminderWithNote,
+  ScheduledSummaryFired,
   FolderResponse,
   FolderTree,
   TagResponse,
@@ -28,6 +29,7 @@ export type {
   AttachmentResponse,
   ReminderResponse,
   ReminderWithNote,
+  ScheduledSummaryFired,
   NoteResponse,
   FolderResponse,
   FolderTree,
@@ -179,6 +181,9 @@ export const remindersApi = {
   },
   fire(id: string) {
     return request<ReminderResponse>(`/reminders/${id}/fire`, { method: 'POST' });
+  },
+  summaries() {
+    return request<ScheduledSummaryFired[]>('/reminders/summaries');
   },
 };
 

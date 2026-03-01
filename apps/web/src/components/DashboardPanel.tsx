@@ -1,13 +1,14 @@
-import { FileText, FolderOpen, CheckCircle2, Star, Calendar, Plus } from 'lucide-react';
+import { FileText, FolderOpen, CheckCircle2, Star, Calendar, CalendarDays, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNotesStore } from '@/stores/notes-store';
 import { useFoldersStore } from '@/stores/folders-store';
 import { useUIStore } from '@/stores/ui-store';
+import { dailyApi } from '@/lib/api';
 
 export function DashboardPanel() {
   const { notes, createNote, setActiveNote } = useNotesStore();
-  const { tree: folders, activeFolderId } = useFoldersStore();
-  const { view } = useUIStore();
+  const { tree: folders } = useFoldersStore();
+  const { setView } = useUIStore();
 
   const activeNotes = notes.filter((n) => !n.is_trashed);
   const pinnedCount = activeNotes.filter((n) => n.is_pinned).length;
@@ -45,6 +46,11 @@ export function DashboardPanel() {
     return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   };
 
+  const handleClickNote = (noteId: string) => {
+    setActiveNote(noteId);
+    setView('all');
+  };
+
   return (
     <div className="flex h-full flex-col items-center justify-center px-8 animate-fade-in-up">
       <div className="w-full max-w-md space-y-6">
@@ -58,7 +64,7 @@ export function DashboardPanel() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {stats.map((s) => (
             <div key={s.label} className="rounded-lg border bg-card px-3 py-2.5 text-center">
               <s.icon className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
@@ -69,11 +75,11 @@ export function DashboardPanel() {
         </div>
 
         {/* Quick actions */}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             size="sm"
             className="flex-1 gap-1.5"
-            onClick={() => createNote({ folder_id: view === 'folder' ? activeFolderId : null })}
+            onClick={async () => { await createNote({}); setView('all'); }}
           >
             <Plus className="h-3.5 w-3.5" />
             New Note
@@ -82,13 +88,23 @@ export function DashboardPanel() {
             size="sm"
             variant="outline"
             className="flex-1 gap-1.5"
-            onClick={() => createNote({
-              folder_id: view === 'folder' ? activeFolderId : null,
-              note_type: 'checklist',
-            })}
+            onClick={async () => { await createNote({ note_type: 'checklist' }); setView('all'); }}
           >
             <CheckCircle2 className="h-3.5 w-3.5" />
             New Checklist
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1 gap-1.5"
+            onClick={async () => {
+              const daily = await dailyApi.getOrCreate();
+              setActiveNote(daily.id);
+              setView('all');
+            }}
+          >
+            <CalendarDays className="h-3.5 w-3.5" />
+            Today
           </Button>
         </div>
 
@@ -100,7 +116,7 @@ export function DashboardPanel() {
               {recentNotes.map((note) => (
                 <button
                   key={note.id}
-                  onClick={() => setActiveNote(note.id)}
+                  onClick={() => handleClickNote(note.id)}
                   className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-left hover:bg-muted/50 transition-colors group"
                 >
                   <Calendar className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />

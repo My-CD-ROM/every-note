@@ -2,8 +2,21 @@ import { create } from 'zustand';
 import type { FolderTree } from '@/lib/api';
 import { foldersApi } from '@/lib/api';
 
+function flattenTree(nodes: FolderTree[]): Record<string, string> {
+  const map: Record<string, string> = {};
+  const walk = (list: FolderTree[]) => {
+    for (const f of list) {
+      map[f.id] = f.name;
+      if (f.children) walk(f.children);
+    }
+  };
+  walk(nodes);
+  return map;
+}
+
 interface FoldersState {
   tree: FolderTree[];
+  folderMap: Record<string, string>;
   activeFolderId: string | null;
   loading: boolean;
 
@@ -16,6 +29,7 @@ interface FoldersState {
 
 export const useFoldersStore = create<FoldersState>((set) => ({
   tree: [],
+  folderMap: {},
   activeFolderId: null,
   loading: false,
 
@@ -23,7 +37,7 @@ export const useFoldersStore = create<FoldersState>((set) => ({
     set({ loading: true });
     try {
       const tree = await foldersApi.tree();
-      set({ tree });
+      set({ tree, folderMap: flattenTree(tree) });
     } finally {
       set({ loading: false });
     }
@@ -34,18 +48,18 @@ export const useFoldersStore = create<FoldersState>((set) => ({
   createFolder: async (data) => {
     await foldersApi.create(data);
     const tree = await foldersApi.tree();
-    set({ tree });
+    set({ tree, folderMap: flattenTree(tree) });
   },
 
   updateFolder: async (id, data) => {
     await foldersApi.update(id, data);
     const tree = await foldersApi.tree();
-    set({ tree });
+    set({ tree, folderMap: flattenTree(tree) });
   },
 
   deleteFolder: async (id) => {
     await foldersApi.delete(id);
     const tree = await foldersApi.tree();
-    set({ tree });
+    set({ tree, folderMap: flattenTree(tree) });
   },
 }));

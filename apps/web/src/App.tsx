@@ -4,7 +4,6 @@ import { AppShell } from '@/components/layout/AppShell';
 import { NoteList } from '@/components/notes/NoteList';
 import { NoteEditor } from '@/components/editor/NoteEditor';
 import { SearchPalette } from '@/components/SearchPalette';
-import { GraphView } from '@/components/graph/GraphView';
 import { CalendarView } from '@/components/calendar/CalendarView';
 import { BoardView } from '@/components/board/BoardView';
 import { FinanceView } from '@/components/finance/FinanceView';
@@ -18,9 +17,11 @@ import { useUIStore } from '@/stores/ui-store';
 import { useFoldersStore } from '@/stores/folders-store';
 import { useProjectsStore } from '@/stores/projects-store';
 import { useReminders } from '@/hooks/useReminders';
+import { useRouter } from '@/hooks/useRouter';
 import { DashboardPanel } from '@/components/DashboardPanel';
 
 const VIEW_TITLES: Record<string, string> = {
+  home: 'Home',
   all: 'All Notes',
   board: 'Board',
   trash: 'Trash',
@@ -29,7 +30,6 @@ const VIEW_TITLES: Record<string, string> = {
   favorites: 'Favorites',
   completed: 'Completed',
   daily: 'Calendar',
-  graph: 'Graph View',
   finance: 'Finance',
 };
 
@@ -54,7 +54,7 @@ function TopBar() {
     });
   };
 
-  const showCreateButton = !['trash', 'all', 'board', 'graph', 'daily', 'completed', 'finance'].includes(view);
+  const showCreateButton = !['home', 'trash', 'board', 'daily', 'completed', 'finance'].includes(view);
 
   return (
     <div className="flex items-center justify-between border-b px-3 py-1.5 bg-background shrink-0">
@@ -93,12 +93,10 @@ function TopBar() {
 }
 
 function NotesPage() {
-  const { fetchNotes, activeNoteId } = useNotesStore();
+  const { activeNoteId } = useNotesStore();
   const { view } = useUIStore();
 
-  useEffect(() => {
-    fetchNotes();
-  }, [fetchNotes]);
+  useRouter();
 
   // Views that use the list + editor two-panel layout
   const isListView = ['all', 'folder', 'tag', 'trash', 'favorites', 'completed'].includes(view);
@@ -107,17 +105,17 @@ function NotesPage() {
     <div className="flex h-full flex-col">
       <TopBar />
 
+      {/* Home — dashboard stats */}
+      {view === 'home' && (
+        <div className="flex-1 overflow-hidden">
+          <DashboardPanel />
+        </div>
+      )}
+
       {/* Finance — full-page view */}
       {view === 'finance' && (
         <div className="flex-1 overflow-hidden">
           <FinanceView />
-        </div>
-      )}
-
-      {/* Full-page views */}
-      {view === 'graph' && (
-        <div className="flex-1 relative">
-          <GraphView />
         </div>
       )}
 
@@ -134,27 +132,30 @@ function NotesPage() {
             <BoardView />
           </div>
           {activeNoteId && (
-            <div className="w-[480px] flex-shrink-0 border-l min-w-0">
+            <div className="hidden md:block w-[480px] flex-shrink-0 border-l min-w-0">
               <NoteEditor />
             </div>
           )}
         </div>
       )}
 
-      {/* List + editor layout for all, folder, tag, trash, favorites, etc. */}
-      {isListView && (
+      {/* Adaptive layout: full-width grid when browsing, split when editing */}
+      {isListView && !activeNoteId && (
+        <div className="flex-1 overflow-hidden">
+          <ScrollArea className="h-full">
+            <NoteList expanded />
+          </ScrollArea>
+        </div>
+      )}
+      {isListView && activeNoteId && (
         <div className="flex flex-1 overflow-hidden">
-          <div className="w-64 flex-shrink-0 border-r flex flex-col bg-muted/20">
+          <div className="hidden md:flex w-72 flex-shrink-0 border-r flex-col bg-muted/20">
             <ScrollArea className="flex-1">
               <NoteList />
             </ScrollArea>
           </div>
           <div className="flex-1 min-w-0">
-            {activeNoteId ? (
-              <NoteEditor />
-            ) : (
-              <DashboardPanel />
-            )}
+            <NoteEditor />
           </div>
         </div>
       )}

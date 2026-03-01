@@ -96,6 +96,18 @@ class Reminder(SQLModel, table=True):
     created_at: str = Field(default_factory=utc_now)
 
 
+class ScheduledSummary(SQLModel, table=True):
+    __tablename__ = "scheduled_summaries"
+    id: str = Field(default_factory=generate_ulid, primary_key=True)
+    name: str
+    folder_id: Optional[str] = Field(default=None, foreign_key="folders.id")
+    cron_expression: str
+    message_template: str = Field(default="You have {count} tasks")
+    last_fired_at: Optional[str] = Field(default=None)
+    is_active: bool = Field(default=True)
+    created_at: str = Field(default_factory=utc_now)
+
+
 class Attachment(SQLModel, table=True):
     __tablename__ = "attachments"
     id: str = Field(default_factory=generate_ulid, primary_key=True)

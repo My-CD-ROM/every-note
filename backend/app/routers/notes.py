@@ -121,7 +121,7 @@ def list_notes(
         query = query.where(Note.parent_id == None)  # noqa: E711
 
     if completed is True:
-        query = query.where(Note.is_completed == True)  # noqa: E712
+        query = query.where(Note.is_completed == True, Note.project_id == None)  # noqa: E711, E712
     elif not trashed:
         # Default: exclude completed notes from normal views
         query = query.where(Note.is_completed == False)  # noqa: E712
@@ -143,6 +143,9 @@ def list_notes(
 
     if project_id is not None:
         query = query.where(Note.project_id == project_id)
+    elif not trashed:
+        # Exclude project tasks from notes views (but show all in trash)
+        query = query.where(Note.project_id == None)  # noqa: E711
 
     query = query.order_by(Note.is_pinned.desc(), Note.updated_at.desc())  # type: ignore[union-attr]
     notes = session.exec(query).all()

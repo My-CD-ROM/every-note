@@ -2,7 +2,7 @@ from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlmodel import Session, select
+from sqlmodel import Session, select, or_
 
 from app.database import get_session
 from app.models import Note, NoteTag, Tag, generate_ulid, utc_now
@@ -28,23 +28,21 @@ def get_range(
     start: str = Query(..., description="Start date YYYY-MM-DD"),
     end: str = Query(..., description="End date YYYY-MM-DD"),
 ):
-    """Return all notes within a date range, keyed by date.
-
-    Returns both daily notes (by daily_date) and regular notes (by updated_at date).
-    """
+    """Return notes for calendar: daily notes by daily_date, others by due_at."""
     try:
         date.fromisoformat(start)
         date.fromisoformat(end)
     except ValueError:
         raise HTTPException(400, "Invalid date format. Use YYYY-MM-DD")
 
-    # Get all non-trashed notes whose updated_at falls in range
     notes = session.exec(
         select(Note)
         .where(
             Note.is_trashed == False,  # noqa: E712
-            Note.updated_at >= start,
-            Note.updated_at < end + "T24",  # include the entire end date
+            or_(
+                Note.daily_date.between(start, end),  # type: ignore[union-attr]
+                Note.due_at.between(start, end + "T24"),  # type: ignore[union-attr]
+            ),
         )
         .order_by(Note.updated_at.desc())  # type: ignore[union-attr]
     ).all()

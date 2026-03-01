@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
+  ArrowDown,
+  ArrowUp,
   CalendarDays,
   CheckCircle2,
+  ChevronDown,
   ChevronRight,
   FileText,
   FolderIcon,
@@ -95,7 +98,7 @@ function EmojiPicker({ value, onChange }: { value: string | null; onChange: (emo
   );
 }
 
-function FolderNode({ folder, depth = 0 }: { folder: FolderTree; depth?: number }) {
+function FolderNode({ folder, depth = 0, onMoveUp, onMoveDown }: { folder: FolderTree; depth?: number; onMoveUp?: () => void; onMoveDown?: () => void }) {
   const [expanded, setExpanded] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [renameName, setRenameName] = useState(folder.name);
@@ -201,6 +204,18 @@ function FolderNode({ folder, depth = 0 }: { folder: FolderTree; depth?: number 
                 <Pencil className="h-3.5 w-3.5 mr-2" />
                 Rename
               </DropdownMenuItem>
+              {onMoveUp && (
+                <DropdownMenuItem onClick={onMoveUp}>
+                  <ArrowUp className="h-3.5 w-3.5 mr-2" />
+                  Move up
+                </DropdownMenuItem>
+              )}
+              {onMoveDown && (
+                <DropdownMenuItem onClick={onMoveDown}>
+                  <ArrowDown className="h-3.5 w-3.5 mr-2" />
+                  Move down
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
                 <Trash2 className="h-3.5 w-3.5 mr-2" />
                 Delete
@@ -239,6 +254,31 @@ function NavItem({ icon: Icon, label, active, iconColor, onClick }: {
       <Icon className="h-4 w-4" style={iconColor ? { color: iconColor } : undefined} />
       <span>{label}</span>
     </button>
+  );
+}
+
+function CollapsibleSection({ label, open, onToggle, action, children }: {
+  label: string;
+  open: boolean;
+  onToggle: () => void;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="mt-2">
+      <div className="mb-0.5 flex items-center gap-1 px-2">
+        <button
+          className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+          onClick={onToggle}
+        >
+          <ChevronDown className={cn('h-3 w-3 transition-transform', !open && '-rotate-90')} />
+          <span className="uppercase tracking-wider">{label}</span>
+        </button>
+        <div className="flex-1" />
+        {action}
+      </div>
+      {open && children}
+    </div>
   );
 }
 
@@ -361,7 +401,16 @@ export function Sidebar() {
   const [showNewTag, setShowNewTag] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
   const [showNewProject, setShowNewProject] = useState(false);
+  const [sections, setSections] = useState<Record<string, boolean>>({
+    folders: false,
+    tags: false,
+    projects: false,
+  });
   const createFolder = useFoldersStore((s) => s.createFolder);
+
+  const toggleSection = useCallback((key: string) => {
+    setSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  }, []);
 
   useEffect(() => {
     fetchTree();
@@ -395,6 +444,21 @@ export function Sidebar() {
     setView('board');
     fetchNotes({ project_id: project.id });
   };
+
+  const handleMoveFolder = useCallback(async (index: number, direction: -1 | 1) => {
+    const swapIdx = index + direction;
+    if (swapIdx < 0 || swapIdx >= tree.length) return;
+    const a = tree[index];
+    const b = tree[swapIdx];
+    // Swap positions
+    const posA = b.position ?? swapIdx;
+    const posB = a.position ?? index;
+    await foldersApi.reorder([
+      { id: a.id, position: posA },
+      { id: b.id, position: posB },
+    ]);
+    fetchTree();
+  }, [tree, fetchTree]);
 
   const nav = (v: typeof view, fetchParams?: Parameters<typeof fetchNotes>[0]) => {
     setActiveFolder(null);
@@ -444,152 +508,142 @@ export function Sidebar() {
         <div className="space-y-0.5">
           <NavItem icon={FileText} label="All Notes" active={view === 'all'} onClick={() => nav('all')} />
           <NavItem icon={Star} label="Favorites" active={view === 'favorites'} iconColor="#f59e0b" onClick={() => nav('favorites', { pinned: true })} />
-          <NavItem icon={CheckCircle2} label="Completed" active={view === 'completed'} iconColor="#10b981" onClick={() => nav('completed', { completed: true })} />
-          <NavItem icon={Trash2} label="Trash" active={view === 'trash'} onClick={() => nav('trash', { trashed: true })} />
         </div>
 
-        {/* Folders (sub-section under Notes) */}
-        <div className="mt-2 mb-1 flex items-center justify-between px-2">
-          <span className="text-[10px] font-medium text-muted-foreground/50">Folders</span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-5 w-5"
-            onClick={() => setShowNewFolder(!showNewFolder)}
-          >
-            <Plus className="h-3 w-3" />
-          </Button>
-        </div>
-
-        {showNewFolder && (
-          <div className="mb-1 px-1">
-            <Input
-              value={newFolderName}
-              onChange={(e) => setNewFolderName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleCreateFolder();
-                if (e.key === 'Escape') setShowNewFolder(false);
-              }}
-              placeholder="Folder name"
-              className="h-7 text-sm"
-              autoFocus
-            />
-          </div>
-        )}
-
-        {tree.map((folder) => (
-          <FolderNode key={folder.id} folder={folder} />
-        ))}
-
-        {/* Tags (sub-section under Notes) */}
-        <div className="mt-2 mb-1 flex items-center justify-between px-2">
-          <span className="text-[10px] font-medium text-muted-foreground/50">Tags</span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-5 w-5"
-            onClick={() => setShowNewTag(!showNewTag)}
-          >
-            <Plus className="h-3 w-3" />
-          </Button>
-        </div>
-
-        {showNewTag && (
-          <div className="mb-1 px-1">
-            <Input
-              value={newTagName}
-              onChange={(e) => setNewTagName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleCreateTag();
-                if (e.key === 'Escape') setShowNewTag(false);
-              }}
-              placeholder="Tag name"
-              className="h-7 text-sm"
-              autoFocus
-            />
-          </div>
-        )}
-
-        {tags.map((tag) => (
-          <button
-            key={tag.id}
-            className={cn(
-              'flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors',
-              'hover:bg-sidebar-accent',
-              activeTagId === tag.id && 'bg-sidebar-accent font-medium'
-            )}
-            onClick={() => {
-              setActiveTag(tag.id);
-              setActiveFolder(null);
-              setView('tag');
-              setActiveNote(null);
-              fetchNotes({ tag_id: tag.id });
-            }}
-          >
-            <span
-              className="h-2.5 w-2.5 rounded-full shrink-0"
-              style={{ backgroundColor: tag.color }}
-            />
-            <span className="truncate">{tag.name}</span>
-            {tag.note_count > 0 && (
-              <span className="ml-auto text-xs text-muted-foreground/60">{tag.note_count}</span>
-            )}
-          </button>
-        ))}
-
-        {/* ── PROJECTS ── */}
-        <SectionHeader
-          label="Projects"
+        {/* Folders (collapsible) */}
+        <CollapsibleSection
+          label="Folders"
+          open={sections.folders}
+          onToggle={() => toggleSection('folders')}
           action={
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-5 w-5"
-              onClick={() => setShowNewProject(!showNewProject)}
-            >
+            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); setShowNewFolder(!showNewFolder); setSections((p) => ({ ...p, folders: true })); }}>
               <Plus className="h-3 w-3" />
             </Button>
           }
-        />
-
-        {showNewProject && (
-          <div className="mb-1 px-1">
-            <Input
-              value={newProjectName}
-              onChange={(e) => setNewProjectName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleCreateProject();
-                if (e.key === 'Escape') setShowNewProject(false);
-              }}
-              placeholder="Project name"
-              className="h-7 text-sm"
-              autoFocus
+        >
+          {showNewFolder && (
+            <div className="mb-1 px-1">
+              <Input
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCreateFolder();
+                  if (e.key === 'Escape') setShowNewFolder(false);
+                }}
+                placeholder="Folder name"
+                className="h-7 text-sm"
+                autoFocus
+              />
+            </div>
+          )}
+          {tree.map((folder, i) => (
+            <FolderNode
+              key={folder.id}
+              folder={folder}
+              onMoveUp={i > 0 ? () => handleMoveFolder(i, -1) : undefined}
+              onMoveDown={i < tree.length - 1 ? () => handleMoveFolder(i, 1) : undefined}
             />
-          </div>
-        )}
+          ))}
+        </CollapsibleSection>
 
-        {projects.map((project) => (
-          <ProjectItem key={project.id} project={project} />
-        ))}
+        {/* Tags (collapsible) */}
+        <CollapsibleSection
+          label="Tags"
+          open={sections.tags}
+          onToggle={() => toggleSection('tags')}
+          action={
+            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); setShowNewTag(!showNewTag); setSections((p) => ({ ...p, tags: true })); }}>
+              <Plus className="h-3 w-3" />
+            </Button>
+          }
+        >
+          {showNewTag && (
+            <div className="mb-1 px-1">
+              <Input
+                value={newTagName}
+                onChange={(e) => setNewTagName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCreateTag();
+                  if (e.key === 'Escape') setShowNewTag(false);
+                }}
+                placeholder="Tag name"
+                className="h-7 text-sm"
+                autoFocus
+              />
+            </div>
+          )}
+          {tags.map((tag) => (
+            <button
+              key={tag.id}
+              className={cn(
+                'flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors',
+                'hover:bg-sidebar-accent',
+                activeTagId === tag.id && 'bg-sidebar-accent font-medium'
+              )}
+              onClick={() => {
+                setActiveTag(tag.id);
+                setActiveFolder(null);
+                setView('tag');
+                setActiveNote(null);
+                fetchNotes({ tag_id: tag.id });
+              }}
+            >
+              <span
+                className="h-2.5 w-2.5 rounded-full shrink-0"
+                style={{ backgroundColor: tag.color }}
+              />
+              <span className="truncate">{tag.name}</span>
+              {tag.note_count > 0 && (
+                <span className="ml-auto text-xs text-muted-foreground/60">{tag.note_count}</span>
+              )}
+            </button>
+          ))}
+        </CollapsibleSection>
 
-        {/* ── CALENDAR ── */}
-        <SectionHeader label="Calendar" />
-        <NavItem icon={CalendarDays} label="Calendar" active={view === 'daily'} iconColor="#3b82f6" onClick={() => { setActiveFolder(null); setActiveTag(null); setActiveNote(null); setView('daily'); }} />
+        {/* ── PROJECTS (collapsible) ── */}
+        <CollapsibleSection
+          label="Projects"
+          open={sections.projects}
+          onToggle={() => toggleSection('projects')}
+          action={
+            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); setShowNewProject(!showNewProject); setSections((p) => ({ ...p, projects: true })); }}>
+              <Plus className="h-3 w-3" />
+            </Button>
+          }
+        >
+          {showNewProject && (
+            <div className="mb-1 px-1">
+              <Input
+                value={newProjectName}
+                onChange={(e) => setNewProjectName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCreateProject();
+                  if (e.key === 'Escape') setShowNewProject(false);
+                }}
+                placeholder="Project name"
+                className="h-7 text-sm"
+                autoFocus
+              />
+            </div>
+          )}
+          {projects.map((project) => (
+            <ProjectItem key={project.id} project={project} />
+          ))}
+        </CollapsibleSection>
 
-        {/* ── FINANCE ── */}
-        <SectionHeader label="Finance" />
-        <NavItem
-          icon={Wallet}
-          label="Finance"
-          active={view === 'finance'}
-          iconColor="#7C756E"
-          onClick={() => {
-            setActiveFolder(null);
-            setActiveTag(null);
-            setActiveNote(null);
-            setView('finance');
-          }}
-        />
+        {/* ── Bottom items ── */}
+        <div className="mt-4 space-y-0.5">
+          <NavItem icon={CalendarDays} label="Calendar" active={view === 'daily'} iconColor="#3b82f6" onClick={() => { setActiveFolder(null); setActiveTag(null); setActiveNote(null); setView('daily'); }} />
+          <NavItem
+            icon={Wallet}
+            label="Finance"
+            active={view === 'finance'}
+            iconColor="#7C756E"
+            onClick={() => { setActiveFolder(null); setActiveTag(null); setActiveNote(null); setView('finance'); }}
+          />
+          <NavItem icon={CheckCircle2} label="Completed" active={view === 'completed'} iconColor="#10b981" onClick={() => nav('completed', { completed: true })} />
+          <NavItem icon={Trash2} label="Trash" active={view === 'trash'} onClick={() => nav('trash', { trashed: true })} />
+        </div>
 
         <div className="h-4" />
       </ScrollArea>

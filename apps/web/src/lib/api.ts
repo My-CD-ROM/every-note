@@ -13,6 +13,12 @@ import type {
   NoteVersionResponse,
   BacklinkResponse,
   GraphData,
+  SpendingCategoryResponse,
+  SpendingEntryResponse,
+  IncomeEntryResponse,
+  UtilityAddressResponse,
+  MeterReadingResponse,
+  BalanceEntryResponse,
 } from '@every-note/shared';
 
 // Re-export all shared types so existing imports from '@/lib/api' keep working
@@ -34,6 +40,12 @@ export type {
   GraphNode,
   GraphEdge,
   GraphData,
+  SpendingCategoryResponse,
+  SpendingEntryResponse,
+  IncomeEntryResponse,
+  UtilityAddressResponse,
+  MeterReadingResponse,
+  BalanceEntryResponse,
 } from '@every-note/shared';
 
 const BASE = '/api';
@@ -267,5 +279,102 @@ export const exportApi = {
 export const graphApi = {
   get() {
     return request<GraphData>('/graph');
+  },
+};
+
+// --- Finance ---
+
+export const financeApi = {
+  // Spending Categories
+  listSpendingCategories() {
+    return request<SpendingCategoryResponse[]>('/finance/spending-categories');
+  },
+  createSpendingCategory(name: string) {
+    return request<SpendingCategoryResponse>('/finance/spending-categories', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    });
+  },
+  updateSpendingCategory(id: string, data: { name?: string; position?: number }) {
+    return request<SpendingCategoryResponse>(`/finance/spending-categories/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+  deleteSpendingCategory(id: string) {
+    return request<{ ok: boolean }>(`/finance/spending-categories/${id}`, { method: 'DELETE' });
+  },
+
+  // Spending Entries
+  listSpendingEntries(year: number) {
+    return request<SpendingEntryResponse[]>(`/finance/spending-entries?year=${year}`);
+  },
+  upsertSpendingEntry(data: { category_id: string; year: number; month: number; amount: number }) {
+    return request<SpendingEntryResponse>('/finance/spending-entries', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Income
+  listIncome(year: number) {
+    return request<IncomeEntryResponse[]>(`/finance/income?year=${year}`);
+  },
+  upsertIncome(data: { year: number; month: number; gross: number }) {
+    return request<IncomeEntryResponse>('/finance/income', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Utility Addresses
+  listUtilityAddresses() {
+    return request<UtilityAddressResponse[]>('/finance/utility-addresses');
+  },
+  createUtilityAddress(name: string) {
+    return request<UtilityAddressResponse>('/finance/utility-addresses', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    });
+  },
+  updateUtilityAddress(id: string, data: { name?: string; position?: number }) {
+    return request<UtilityAddressResponse>(`/finance/utility-addresses/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+  deleteUtilityAddress(id: string) {
+    return request<{ ok: boolean }>(`/finance/utility-addresses/${id}`, { method: 'DELETE' });
+  },
+
+  // Meter Readings
+  listMeterReadings(year: number) {
+    return request<MeterReadingResponse[]>(`/finance/meter-readings?year=${year}`);
+  },
+  upsertMeterReading(data: { address_id: string; utility_type: string; year: number; month: number; reading: number }) {
+    return request<MeterReadingResponse>('/finance/meter-readings', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Balance
+  listBalanceEntries() {
+    return request<BalanceEntryResponse[]>('/finance/balance-entries');
+  },
+  createBalanceEntry(name: string) {
+    return request<BalanceEntryResponse>('/finance/balance-entries', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    });
+  },
+  updateBalanceEntry(id: string, data: { name?: string; position?: number; uah?: number; usd?: number; eur?: number }) {
+    return request<BalanceEntryResponse>(`/finance/balance-entries/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+  deleteBalanceEntry(id: string) {
+    return request<{ ok: boolean }>(`/finance/balance-entries/${id}`, { method: 'DELETE' });
   },
 };

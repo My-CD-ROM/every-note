@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CalendarClock, Check, CheckCircle2, ChevronRight, Circle, Download, FileText, History, ListChecks, Loader2, MoreHorizontal, Repeat, Star, Tag, Trash2, Undo2, X } from 'lucide-react';
+import { CalendarClock, Check, CheckCircle2, ChevronRight, Circle, Download, FileText, History, ListChecks, Loader2, MoreHorizontal, Paperclip, Repeat, Star, Tag, Trash2, Undo2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -11,9 +11,10 @@ import { FormatToolbar } from './FormatToolbar';
 import { VersionHistory } from './VersionHistory';
 import { Backlinks } from './Backlinks';
 import { SubtaskList } from './SubtaskList';
+import { AttachmentPanel } from './AttachmentPanel';
 import { useNotesStore } from '@/stores/notes-store';
 import { useTagsStore } from '@/stores/tags-store';
-import { notesApi, exportApi } from '@/lib/api';
+import { notesApi, exportApi, attachmentsApi } from '@/lib/api';
 import type { RecurrenceRule } from '@/lib/api';
 import { STATUSES, STATUS_MAP } from '@/lib/statuses';
 
@@ -91,6 +92,10 @@ export function NoteEditor() {
   const [recurrencePopoverOpen, setRecurrencePopoverOpen] = useState(false);
   const [recFreq, setRecFreq] = useState<RecurrenceRule['freq']>('daily');
   const [recInterval, setRecInterval] = useState(1);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [attachKey, setAttachKey] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-save refs
   const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
@@ -248,6 +253,26 @@ export function NoteEditor() {
       setDirty(false);
     }
     setShowHistory(false);
+  }, [activeNoteId]);
+
+  const handleUploadFiles = useCallback(async (files: FileList | File[]) => {
+    if (!activeNoteId) return;
+    setUploading(true);
+    try {
+      for (const file of Array.from(files)) {
+        const att = await attachmentsApi.upload(activeNoteId, file);
+        const isImage = att.mime_type.startsWith('image/');
+        const md = isImage
+          ? `![${att.original_filename}](${att.url})\n`
+          : `[${att.original_filename}](${att.url})\n`;
+        editorRef.current?.insertAtCursor(md);
+      }
+      setAttachKey((k) => k + 1);
+    } catch (e: any) {
+      console.error('Upload failed:', e.message);
+    } finally {
+      setUploading(false);
+    }
   }, [activeNoteId]);
 
   if (!note) {
@@ -454,6 +479,28 @@ export function NoteEditor() {
             </PopoverContent>
           </Popover>
 
+          {/* Attach file */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files?.length) handleUploadFiles(e.target.files);
+              e.target.value = '';
+            }}
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            title="Attach file"
+          >
+            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+          </Button>
+
           {/* Recurrence */}
           <Popover open={recurrencePopoverOpen} onOpenChange={setRecurrencePopoverOpen}>
             <PopoverTrigger asChild>
@@ -618,8 +665,32 @@ export function NoteEditor() {
           <FormatToolbar editorRef={editorRef} coords={selectionCoords} />
         )}
 
-        {/* Editor / Preview */}
-        <div className="flex flex-1 overflow-hidden">
+        {/* Editor / Preview with drag-and-drop */}
+        <div
+          className={`flex flex-1 overflow-hidden relative ${isDragOver ? 'ring-2 ring-primary ring-inset' : ''}`}
+          onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+          onDragLeave={() => setIsDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDragOver(false);
+            if (e.dataTransfer.files.length) handleUploadFiles(e.dataTransfer.files);
+          }}
+          onPaste={(e) => {
+            const files = Array.from(e.clipboardData.items)
+              .filter((item) => item.kind === 'file')
+              .map((item) => item.getAsFile())
+              .filter((f): f is File => f !== null);
+            if (files.length > 0) {
+              e.preventDefault();
+              handleUploadFiles(files);
+            }
+          }}
+        >
+          {isDragOver && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-primary/5 border-2 border-dashed border-primary rounded-md pointer-events-none">
+              <span className="text-sm font-medium text-primary">Drop to attach</span>
+            </div>
+          )}
           {note.note_type === 'checklist' ? (
             <div className="w-full">
               <ChecklistEditor value={content} onChange={handleContentChange} />
@@ -641,6 +712,13 @@ export function NoteEditor() {
         {!note.parent_id && (
           <SubtaskList noteId={note.id} onOpenSubtask={handleOpenSubtask} />
         )}
+
+        {/* Attachments */}
+        <AttachmentPanel
+          key={`attach-${note.id}-${attachKey}`}
+          noteId={note.id}
+          onInsert={(md) => editorRef.current?.insertAtCursor(md)}
+        />
 
         {/* Backlinks */}
         <Backlinks noteId={note.id} />

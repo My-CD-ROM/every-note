@@ -2,6 +2,8 @@ import type {
   NoteResponse,
   RecurrenceRule,
   AttachmentResponse,
+  ReminderResponse,
+  ReminderWithNote,
   FolderResponse,
   FolderTree,
   TagResponse,
@@ -18,6 +20,8 @@ export type {
   TagBrief,
   RecurrenceRule,
   AttachmentResponse,
+  ReminderResponse,
+  ReminderWithNote,
   NoteResponse,
   FolderResponse,
   FolderTree,
@@ -137,6 +141,32 @@ export const attachmentsApi = {
   },
   delete(id: string) {
     return request<{ ok: boolean }>(`/attachments/${id}`, { method: 'DELETE' });
+  },
+};
+
+// --- Reminders ---
+
+export const remindersApi = {
+  list(noteId: string) {
+    return request<ReminderResponse[]>(`/notes/${noteId}/reminders`);
+  },
+  create(noteId: string, remind_at: string) {
+    return request<ReminderResponse>(`/notes/${noteId}/reminders`, { method: 'POST', body: JSON.stringify({ remind_at }) });
+  },
+  delete(id: string) {
+    return request<{ ok: boolean }>(`/reminders/${id}`, { method: 'DELETE' });
+  },
+  dismiss(id: string) {
+    return request<ReminderResponse>(`/reminders/${id}/dismiss`, { method: 'POST' });
+  },
+  snooze(id: string, minutes: number) {
+    return request<ReminderResponse>(`/reminders/${id}/snooze`, { method: 'POST', body: JSON.stringify({ minutes }) });
+  },
+  pending() {
+    return request<ReminderWithNote[]>('/reminders/pending');
+  },
+  fire(id: string) {
+    return request<ReminderResponse>(`/reminders/${id}/fire`, { method: 'POST' });
   },
 };
 

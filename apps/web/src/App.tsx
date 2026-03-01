@@ -7,6 +7,7 @@ import { SearchPalette } from '@/components/SearchPalette';
 import { GraphView } from '@/components/graph/GraphView';
 import { CalendarView } from '@/components/calendar/CalendarView';
 import { BoardView } from '@/components/board/BoardView';
+import { NotificationCenter } from '@/components/reminders/NotificationCenter';
 import { TemplatePicker } from '@/components/notes/TemplatePicker';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ import { useNotesStore } from '@/stores/notes-store';
 import { useUIStore } from '@/stores/ui-store';
 import { useFoldersStore } from '@/stores/folders-store';
 import { useProjectsStore } from '@/stores/projects-store';
+import { useReminders } from '@/hooks/useReminders';
 
 const VIEW_TITLES: Record<string, string> = {
   all: 'All Notes',
@@ -29,10 +31,14 @@ const VIEW_TITLES: Record<string, string> = {
 };
 
 function TopBar() {
-  const { createNote } = useNotesStore();
+  const { createNote, setActiveNote } = useNotesStore();
   const { setMobileSidebarOpen, view } = useUIStore();
   const activeFolderId = useFoldersStore((s) => s.activeFolderId);
   const { activeProjectId, projects } = useProjectsStore();
+  const { pending, fired, dismiss, snooze, requestPermission } = useReminders();
+
+  // Request notification permission on mount
+  useEffect(() => { requestPermission(); }, [requestPermission]);
 
   const activeProject = view === 'board' ? projects.find((p) => p.id === activeProjectId) : null;
 
@@ -57,19 +63,28 @@ function TopBar() {
           {activeProject ? `${activeProject.icon ? activeProject.icon + ' ' : ''}${activeProject.name}` : VIEW_TITLES[view] ?? 'Notes'}
         </h2>
       </div>
-      {showCreateButton && (
-        <div className="flex items-center gap-1">
-          <Button
-            size="sm"
-            className="h-7 gap-1.5"
-            onClick={() => createNote({ folder_id: view === 'folder' ? activeFolderId : null })}
-          >
-            <Plus className="h-3.5 w-3.5" />
-            <span className="text-xs">New Note</span>
-          </Button>
-          <TemplatePicker onSelect={handleTemplateCreate} />
-        </div>
-      )}
+      <div className="flex items-center gap-1">
+        <NotificationCenter
+          pending={pending}
+          fired={fired}
+          onDismiss={dismiss}
+          onSnooze={snooze}
+          onOpenNote={(noteId) => setActiveNote(noteId)}
+        />
+        {showCreateButton && (
+          <>
+            <Button
+              size="sm"
+              className="h-7 gap-1.5"
+              onClick={() => createNote({ folder_id: view === 'folder' ? activeFolderId : null })}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span className="text-xs">New Note</span>
+            </Button>
+            <TemplatePicker onSelect={handleTemplateCreate} />
+          </>
+        )}
+      </div>
     </div>
   );
 }

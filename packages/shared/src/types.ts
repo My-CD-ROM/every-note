@@ -117,6 +117,24 @@ export interface GraphData {
   edges: GraphEdge[];
 }
 
+export interface ReminderResponse {
+  id: string;
+  note_id: string;
+  remind_at: string;
+  is_fired: boolean;
+  is_dismissed: boolean;
+  created_at: string;
+}
+
+export interface ReminderWithNote {
+  id: string;
+  note_id: string;
+  note_title: string;
+  remind_at: string;
+  is_fired: boolean;
+  is_dismissed: boolean;
+}
+
 export interface AttachmentResponse {
   id: string;
   note_id: string;

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CalendarClock, Check, CheckCircle2, ChevronRight, Circle, Download, FileText, History, ListChecks, Loader2, MoreHorizontal, Paperclip, Repeat, Star, Tag, Trash2, Undo2, X } from 'lucide-react';
+import { Bell, CalendarClock, Check, CheckCircle2, ChevronRight, Circle, Download, FileText, History, ListChecks, Loader2, MoreHorizontal, Paperclip, Repeat, Star, Tag, Trash2, Undo2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -14,7 +14,7 @@ import { SubtaskList } from './SubtaskList';
 import { AttachmentPanel } from './AttachmentPanel';
 import { useNotesStore } from '@/stores/notes-store';
 import { useTagsStore } from '@/stores/tags-store';
-import { notesApi, exportApi, attachmentsApi } from '@/lib/api';
+import { notesApi, exportApi, attachmentsApi, remindersApi } from '@/lib/api';
 import type { RecurrenceRule } from '@/lib/api';
 import { STATUSES, STATUS_MAP } from '@/lib/statuses';
 
@@ -92,6 +92,7 @@ export function NoteEditor() {
   const [recurrencePopoverOpen, setRecurrencePopoverOpen] = useState(false);
   const [recFreq, setRecFreq] = useState<RecurrenceRule['freq']>('daily');
   const [recInterval, setRecInterval] = useState(1);
+  const [reminderPopoverOpen, setReminderPopoverOpen] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [attachKey, setAttachKey] = useState(0);
@@ -500,6 +501,49 @@ export function NoteEditor() {
           >
             {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
           </Button>
+
+          {/* Remind me */}
+          <Popover open={reminderPopoverOpen} onOpenChange={setReminderPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0"
+                title="Set reminder"
+              >
+                <Bell className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-44 p-1" align="end">
+              <div className="text-xs font-medium text-muted-foreground px-2 py-1">Remind me</div>
+              {[
+                { label: 'In 15 minutes', minutes: 15 },
+                { label: 'In 1 hour', minutes: 60 },
+                { label: 'In 3 hours', minutes: 180 },
+                { label: 'Tomorrow 9 AM', minutes: -1 },
+              ].map((opt) => (
+                <button
+                  key={opt.label}
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors"
+                  onClick={async () => {
+                    if (!activeNoteId) return;
+                    let remindAt: Date;
+                    if (opt.minutes === -1) {
+                      remindAt = new Date();
+                      remindAt.setDate(remindAt.getDate() + 1);
+                      remindAt.setHours(9, 0, 0, 0);
+                    } else {
+                      remindAt = new Date(Date.now() + opt.minutes * 60_000);
+                    }
+                    await remindersApi.create(activeNoteId, remindAt.toISOString());
+                    setReminderPopoverOpen(false);
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </PopoverContent>
+          </Popover>
 
           {/* Recurrence */}
           <Popover open={recurrencePopoverOpen} onOpenChange={setRecurrencePopoverOpen}>

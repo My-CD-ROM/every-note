@@ -15,6 +15,7 @@ import {
   Trash2,
   Sun,
   Moon,
+  Wallet,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -420,6 +421,22 @@ export function Sidebar() {
             )}
           </button>
         ))}
+
+        <Separator className="my-3" />
+
+        {/* Finance */}
+        <NavItem
+          icon={Wallet}
+          label="Finance"
+          active={view === 'finance'}
+          iconColor="#059669"
+          onClick={() => {
+            setActiveFolder(null);
+            setActiveTag(null);
+            setActiveNote(null);
+            setView('finance');
+          }}
+        />
 
         <Separator className="my-3" />
 

@@ -11,6 +11,7 @@ class NoteCreate(BaseModel):
     note_type: str = "note"
     parent_id: Optional[str] = None
     status: Optional[str] = None
+    project_id: Optional[str] = None
 
 
 class NoteUpdate(BaseModel):
@@ -24,6 +25,7 @@ class NoteUpdate(BaseModel):
     is_completed: Optional[bool] = None
     parent_id: Optional[str] = None
     status: Optional[str] = None
+    project_id: Optional[str] = None
 
 
 class TagBrief(BaseModel):
@@ -49,6 +51,7 @@ class NoteResponse(BaseModel):
     due_at: Optional[str]
     parent_id: Optional[str]
     status: Optional[str]
+    project_id: Optional[str]
     created_at: str
     updated_at: str
     tags: list[TagBrief] = []
@@ -107,6 +110,29 @@ class TagResponse(BaseModel):
     name: str
     color: str
     created_at: str
+    note_count: int = 0
+
+
+# --- Projects ---
+class ProjectCreate(BaseModel):
+    name: str
+    icon: Optional[str] = None
+    description: Optional[str] = None
+
+
+class ProjectUpdate(BaseModel):
+    name: Optional[str] = None
+    icon: Optional[str] = None
+    description: Optional[str] = None
+
+
+class ProjectResponse(BaseModel):
+    id: str
+    name: str
+    icon: Optional[str]
+    description: Optional[str]
+    created_at: str
+    updated_at: str
     note_count: int = 0
 
 

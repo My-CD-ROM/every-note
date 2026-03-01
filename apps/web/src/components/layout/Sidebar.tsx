@@ -406,9 +406,9 @@ export function Sidebar() {
   const [newProjectName, setNewProjectName] = useState('');
   const [showNewProject, setShowNewProject] = useState(false);
   const [sections, setSections] = useState<Record<string, boolean>>({
-    folders: false,
-    tags: false,
-    projects: false,
+    folders: true,
+    tags: true,
+    projects: true,
   });
   const createFolder = useFoldersStore((s) => s.createFolder);
 

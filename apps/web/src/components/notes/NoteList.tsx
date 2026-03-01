@@ -367,7 +367,7 @@ export function NoteList({ expanded = false }: { expanded?: boolean }) {
                 onToggle={() => toggleGroup(group.label)}
               />
               {!collapsed[group.label] && (
-                <div className="grid grid-cols-2 xl:grid-cols-3 gap-2 px-2 pb-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 px-2 pb-2">
                   {group.notes.map((note) => (
                     <GridNoteCard key={note.id} note={note} showFolder={showFolder} />
                   ))}

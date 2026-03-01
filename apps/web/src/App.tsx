@@ -132,7 +132,7 @@ function NotesPage() {
             <BoardView />
           </div>
           {activeNoteId && (
-            <div className="w-[480px] flex-shrink-0 border-l min-w-0">
+            <div className="hidden md:block w-[480px] flex-shrink-0 border-l min-w-0">
               <NoteEditor />
             </div>
           )}
@@ -149,7 +149,7 @@ function NotesPage() {
       )}
       {isListView && activeNoteId && (
         <div className="flex flex-1 overflow-hidden">
-          <div className="w-72 flex-shrink-0 border-r flex flex-col bg-muted/20">
+          <div className="hidden md:flex w-72 flex-shrink-0 border-r flex-col bg-muted/20">
             <ScrollArea className="flex-1">
               <NoteList />
             </ScrollArea>

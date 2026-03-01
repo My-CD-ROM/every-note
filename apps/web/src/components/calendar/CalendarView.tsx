@@ -10,7 +10,10 @@ import { useUIStore } from '@/stores/ui-store';
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 function toDateStr(d: Date): string {
-  return d.toISOString().split('T')[0];
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 function getMonthDays(year: number, month: number) {
@@ -155,12 +158,12 @@ export function CalendarView() {
     fetchMonthNotes();
   }, [fetchMonthNotes]);
 
-  // Group notes by date (YYYY-MM-DD from updated_at)
+  // Group notes by date: daily notes by daily_date, others by due_at
   const notesByDate = useMemo(() => {
     const map: Record<string, NoteResponse[]> = {};
     for (const note of monthNotes) {
-      // For daily notes, use daily_date; for regular notes, use updated_at date part
-      const dateKey = note.daily_date || note.updated_at.split('T')[0];
+      const dateKey = note.daily_date || (note.due_at ? note.due_at.split('T')[0] : null);
+      if (!dateKey) continue;
       if (!map[dateKey]) map[dateKey] = [];
       map[dateKey].push(note);
     }

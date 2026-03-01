@@ -106,7 +106,7 @@ function FolderNode({ folder, depth = 0, onMoveUp, onMoveDown }: { folder: Folde
   const setActiveFolder = useFoldersStore((s) => s.setActiveFolder);
   const updateFolder = useFoldersStore((s) => s.updateFolder);
   const deleteFolder = useFoldersStore((s) => s.deleteFolder);
-  const setView = useUIStore((s) => s.setView);
+  const { setView, setMobileSidebarOpen: closeMobile } = useUIStore();
   const fetchNotes = useNotesStore((s) => s.fetchNotes);
   const setActiveNote = useNotesStore((s) => s.setActiveNote);
   const setActiveTag = useTagsStore((s) => s.setActiveTag);
@@ -132,6 +132,16 @@ function FolderNode({ folder, depth = 0, onMoveUp, onMoveDown }: { folder: Folde
     await deleteFolder(folder.id);
   };
 
+  const handleNav = () => {
+    if (renaming) return;
+    setActiveFolder(folder.id);
+    setActiveTag(null);
+    setView('folder');
+    setActiveNote(null);
+    closeMobile(false);
+    fetchNotes({ folder_id: folder.id });
+  };
+
   return (
     <div>
       <div className="group flex items-center">
@@ -144,15 +154,8 @@ function FolderNode({ folder, depth = 0, onMoveUp, onMoveDown }: { folder: Folde
             isActive && 'bg-sidebar-accent font-medium'
           )}
           style={{ paddingLeft: `${depth * 12 + 8}px` }}
-          onClick={() => {
-            if (renaming) return;
-            setActiveFolder(folder.id);
-            setActiveTag(null);
-            setView('folder');
-            setActiveNote(null);
-            fetchNotes({ folder_id: folder.id });
-          }}
-          onKeyDown={(e) => { if (renaming) return; if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setActiveFolder(folder.id); setActiveTag(null); setView('folder'); setActiveNote(null); fetchNotes({ folder_id: folder.id }); } }}
+          onClick={handleNav}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleNav(); } }}
         >
           {hasChildren ? (
             <ChevronRight
@@ -299,7 +302,7 @@ function ProjectItem({ project }: { project: { id: string; name: string; icon?: 
   const setActiveFolder = useFoldersStore((s) => s.setActiveFolder);
   const setActiveTag = useTagsStore((s) => s.setActiveTag);
   const { setActiveNote, fetchNotes } = useNotesStore();
-  const { setView, view } = useUIStore();
+  const { setView, setMobileSidebarOpen: closeMobile, view } = useUIStore();
 
   const isActive = view === 'board' && activeProjectId === project.id;
 
@@ -336,6 +339,7 @@ function ProjectItem({ project }: { project: { id: string; name: string; icon?: 
           setActiveTag(null);
           setActiveNote(null);
           setView('board');
+          closeMobile(false);
           fetchNotes({ project_id: project.id });
         }}
       >
@@ -392,7 +396,7 @@ export function Sidebar() {
   const { tags, fetchTags, activeTagId, setActiveTag, createTag } = useTagsStore();
   const { fetchNotes, setActiveNote } = useNotesStore();
   const { projects, fetchProjects, createProject } = useProjectsStore();
-  const { theme, toggleTheme, setView, setSearchOpen, view } = useUIStore();
+  const { theme, toggleTheme, setView, setSearchOpen, setMobileSidebarOpen, view } = useUIStore();
   const setActiveFolder = useFoldersStore((s) => s.setActiveFolder);
 
   const [newFolderName, setNewFolderName] = useState('');
@@ -465,6 +469,7 @@ export function Sidebar() {
     setActiveTag(null);
     setView(v);
     setActiveNote(null);
+    setMobileSidebarOpen(false);
     if (fetchParams !== undefined) {
       fetchNotes(fetchParams);
     } else {
@@ -585,6 +590,7 @@ export function Sidebar() {
                 setActiveFolder(null);
                 setView('tag');
                 setActiveNote(null);
+                setMobileSidebarOpen(false);
                 fetchNotes({ tag_id: tag.id });
               }}
             >
@@ -633,13 +639,13 @@ export function Sidebar() {
 
         {/* ── Bottom items ── */}
         <div className="mt-4 space-y-0.5">
-          <NavItem icon={CalendarDays} label="Calendar" active={view === 'daily'} iconColor="#3b82f6" onClick={() => { setActiveFolder(null); setActiveTag(null); setActiveNote(null); setView('daily'); }} />
+          <NavItem icon={CalendarDays} label="Calendar" active={view === 'daily'} iconColor="#3b82f6" onClick={() => { setActiveFolder(null); setActiveTag(null); setActiveNote(null); setView('daily'); setMobileSidebarOpen(false); }} />
           <NavItem
             icon={Wallet}
             label="Finance"
             active={view === 'finance'}
             iconColor="#7C756E"
-            onClick={() => { setActiveFolder(null); setActiveTag(null); setActiveNote(null); setView('finance'); }}
+            onClick={() => { setActiveFolder(null); setActiveTag(null); setActiveNote(null); setView('finance'); setMobileSidebarOpen(false); }}
           />
           <NavItem icon={CheckCircle2} label="Completed" active={view === 'completed'} iconColor="#10b981" onClick={() => nav('completed', { completed: true })} />
           <NavItem icon={Trash2} label="Trash" active={view === 'trash'} onClick={() => nav('trash', { trashed: true })} />

@@ -1,8 +1,9 @@
-import { FileText, FolderOpen, CheckCircle2, Star, Calendar, Plus } from 'lucide-react';
+import { FileText, FolderOpen, CheckCircle2, Star, Calendar, CalendarDays, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNotesStore } from '@/stores/notes-store';
 import { useFoldersStore } from '@/stores/folders-store';
 import { useUIStore } from '@/stores/ui-store';
+import { dailyApi } from '@/lib/api';
 
 export function DashboardPanel() {
   const { notes, createNote, setActiveNote } = useNotesStore();
@@ -91,6 +92,19 @@ export function DashboardPanel() {
           >
             <CheckCircle2 className="h-3.5 w-3.5" />
             New Checklist
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1 gap-1.5"
+            onClick={async () => {
+              const daily = await dailyApi.getOrCreate();
+              setActiveNote(daily.id);
+              setView('all');
+            }}
+          >
+            <CalendarDays className="h-3.5 w-3.5" />
+            Today
           </Button>
         </div>
 

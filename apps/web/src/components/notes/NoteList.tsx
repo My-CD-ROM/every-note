@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { CalendarClock, Check, FileText, FolderIcon, GripVertical, ListChecks, Repeat, Star } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { CalendarClock, Check, ChevronRight, FileText, FolderIcon, GripVertical, ListChecks, Repeat, Search, Star } from 'lucide-react';
 import { checklistProgressFromContent } from '@/lib/checklist';
 import {
   DndContext,
@@ -260,10 +260,42 @@ function SortableNoteCard({ note, showFolder }: { note: NoteResponse; showFolder
   );
 }
 
+type NoteGroup = { label: string; notes: NoteResponse[] };
+
+function groupNotes(notes: NoteResponse[]): NoteGroup[] {
+  const pinned: NoteResponse[] = [];
+  const general: NoteResponse[] = [];
+
+  for (const note of notes) {
+    if (note.is_pinned) pinned.push(note);
+    else general.push(note);
+  }
+
+  const groups: NoteGroup[] = [];
+  if (pinned.length > 0) groups.push({ label: 'Pinned', notes: pinned });
+  if (general.length > 0) groups.push({ label: 'General', notes: general });
+  return groups;
+}
+
+function GroupHeader({ label, count, open, onToggle }: { label: string; count: number; open: boolean; onToggle: () => void }) {
+  return (
+    <button
+      onClick={onToggle}
+      className="flex items-center gap-1 px-2 py-1 w-full text-left group/header"
+    >
+      <ChevronRight className={cn('h-3 w-3 text-muted-foreground/60 transition-transform', open && 'rotate-90')} />
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">{label}</span>
+      <span className="text-[10px] text-muted-foreground/40">{count}</span>
+    </button>
+  );
+}
+
 export function NoteList() {
   const { notes, loading } = useNotesStore();
   const view = useUIStore((s) => s.view);
   const showFolder = view === 'all' || view === 'favorites';
+  const [filter, setFilter] = useState('');
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -288,6 +320,21 @@ export function NoteList() {
     [notes]
   );
 
+  const filtered = useMemo(() => {
+    if (!filter.trim()) return notes;
+    const q = filter.toLowerCase();
+    return notes.filter(
+      (n) => n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q)
+    );
+  }, [notes, filter]);
+
+  const groups = useMemo(() => groupNotes(filtered), [filtered]);
+  const allNoteIds = useMemo(() => filtered.map((n) => n.id), [filtered]);
+
+  const toggleGroup = useCallback((label: string) => {
+    setCollapsed((prev) => ({ ...prev, [label]: !prev[label] }));
+  }, []);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
@@ -306,14 +353,51 @@ export function NoteList() {
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <SortableContext items={notes.map((n) => n.id)} strategy={verticalListSortingStrategy}>
-        <div className="flex flex-col p-1">
-          {notes.map((note) => (
-            <SortableNoteCard key={note.id} note={note} showFolder={showFolder} />
-          ))}
+    <div className="flex flex-col">
+      {/* Filter input */}
+      <div className="px-2 py-1.5">
+        <div className="relative">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50" />
+          <input
+            type="text"
+            placeholder="Filter notes..."
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="w-full h-7 pl-7 pr-2 rounded-md bg-muted/50 border border-border/50 text-xs placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/30"
+          />
         </div>
-      </SortableContext>
-    </DndContext>
+      </div>
+
+      {filtered.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-8 text-muted-foreground gap-1 px-4">
+          <Search className="h-5 w-5 stroke-1" />
+          <p className="text-xs">No matching notes</p>
+        </div>
+      )}
+
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={allNoteIds} strategy={verticalListSortingStrategy}>
+          <div className="flex flex-col">
+            {groups.map((group) => (
+              <div key={group.label}>
+                <GroupHeader
+                  label={group.label}
+                  count={group.notes.length}
+                  open={!collapsed[group.label]}
+                  onToggle={() => toggleGroup(group.label)}
+                />
+                {!collapsed[group.label] && (
+                  <div className="flex flex-col px-1">
+                    {group.notes.map((note) => (
+                      <SortableNoteCard key={note.id} note={note} showFolder={showFolder} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
+    </div>
   );
 }

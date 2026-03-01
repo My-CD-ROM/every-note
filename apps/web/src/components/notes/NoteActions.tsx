@@ -48,25 +48,27 @@ export function NoteActions({ note }: { note: NoteResponse }) {
 
   if (note.is_trashed) {
     return (
-      <div className="flex gap-1">
+      <div className="flex gap-0.5">
         <Button
           variant="ghost"
-          size="sm"
-          className="h-7 text-xs"
+          size="icon"
+          className="h-6 w-6"
+          title="Restore"
           onClick={async () => {
             await restoreNote(note.id);
             fetchNotes({ trashed: true });
           }}
         >
-          <Undo2 className="mr-1 h-3 w-3" /> Restore
+          <Undo2 className="h-3.5 w-3.5" />
         </Button>
         <Button
           variant="ghost"
-          size="sm"
-          className="h-7 text-xs text-red-500"
+          size="icon"
+          className="h-6 w-6 text-red-500"
+          title="Delete permanently"
           onClick={() => deleteNote(note.id, true)}
         >
-          <Trash2 className="mr-1 h-3 w-3" /> Delete
+          <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </div>
     );
@@ -74,28 +76,30 @@ export function NoteActions({ note }: { note: NoteResponse }) {
 
   if (note.is_completed) {
     return (
-      <div className="flex gap-1">
+      <div className="flex gap-0.5">
         <Button
           variant="ghost"
-          size="sm"
-          className="h-7 text-xs"
+          size="icon"
+          className="h-6 w-6"
+          title="Restore"
           onClick={async () => {
             await uncompleteNote(note.id);
             fetchNotes({ completed: true });
           }}
         >
-          <Undo2 className="mr-1 h-3 w-3" /> Restore
+          <Undo2 className="h-3.5 w-3.5" />
         </Button>
         <Button
           variant="ghost"
-          size="sm"
-          className="h-7 text-xs text-red-500"
+          size="icon"
+          className="h-6 w-6 text-red-500"
+          title="Move to trash"
           onClick={async () => {
             await deleteNote(note.id);
             fetchNotes({ completed: true });
           }}
         >
-          <Trash2 className="mr-1 h-3 w-3" /> Trash
+          <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </div>
     );

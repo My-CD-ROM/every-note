@@ -420,10 +420,10 @@ export function Sidebar() {
     <div className="flex h-full w-64 flex-col border-r bg-sidebar text-sidebar-foreground">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-2">
+        <button className="flex items-center gap-2" onClick={() => nav('home')}>
           <img src="/logo.svg" alt="" className="h-5 w-5" />
           <h1 className="text-base font-bold tracking-tight">Every Note</h1>
-        </div>
+        </button>
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleTheme}>
           {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>

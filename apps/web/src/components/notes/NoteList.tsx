@@ -42,6 +42,107 @@ function formatDue(iso: string): string {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
+function MetadataBadges({ note, showFolder }: { note: NoteResponse; showFolder: boolean }) {
+  const isPastDue = note.due_at ? new Date(note.due_at) < new Date() : false;
+
+  return (
+    <>
+      <span className="text-[10px] text-muted-foreground">{formatDate(note.updated_at)}</span>
+
+      {showFolder && note.folder_id && (
+        <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
+          <FolderIcon className="h-2.5 w-2.5" />
+          <span className="truncate max-w-[60px]">folder</span>
+        </span>
+      )}
+
+      {note.due_at && (
+        <span className={cn(
+          'inline-flex items-center gap-0.5 text-[10px] font-medium rounded px-1 py-px',
+          isPastDue
+            ? 'bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400'
+            : 'bg-primary/10 text-primary'
+        )}>
+          <CalendarClock className="h-2.5 w-2.5" />
+          {formatDue(note.due_at)}
+        </span>
+      )}
+
+      {note.recurrence_rule && (
+        <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-primary rounded px-1 py-px bg-primary/10">
+          <Repeat className="h-2.5 w-2.5" />
+        </span>
+      )}
+
+      {note.note_type === 'checklist' && note.subtask_count === 0 && (() => {
+        const { done, total } = checklistProgressFromContent(note.content);
+        if (total === 0) return null;
+        return (
+          <span className="inline-flex items-center gap-0.5 text-[10px] font-medium rounded px-1 py-px bg-primary/10 text-primary">
+            <ListChecks className="h-2.5 w-2.5" />
+            {done}/{total}
+          </span>
+        );
+      })()}
+
+      {note.tags.map((tag) => (
+        <span
+          key={tag.id}
+          className="inline-flex items-center gap-0.5 text-[10px] font-medium"
+          style={{ color: tag.color }}
+        >
+          <span
+            className="h-1.5 w-1.5 rounded-full shrink-0"
+            style={{ backgroundColor: tag.color }}
+          />
+          {tag.name}
+        </span>
+      ))}
+    </>
+  );
+}
+
+function GridNoteCard({ note, showFolder }: { note: NoteResponse; showFolder: boolean }) {
+  const { activeNoteId, setActiveNote, updateNote } = useNotesStore();
+  const isActive = activeNoteId === note.id;
+
+  return (
+    <div
+      className={cn(
+        'group rounded-lg border border-border bg-card p-3 transition-colors cursor-pointer hover:border-primary/30 hover:bg-muted/50',
+        isActive && 'border-primary/40 bg-primary/5 ring-1 ring-primary/20'
+      )}
+      onClick={() => setActiveNote(isActive ? null : note.id)}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+          <button
+            onClick={(e) => { e.stopPropagation(); updateNote(note.id, { is_pinned: !note.is_pinned }); }}
+            className={cn(
+              'h-3.5 w-3.5 shrink-0 transition-colors',
+              note.is_pinned
+                ? 'text-amber-400'
+                : 'text-transparent group-hover:text-muted-foreground/30 hover:!text-amber-400'
+            )}
+          >
+            <Star className={cn('h-3 w-3', note.is_pinned && 'fill-amber-400')} />
+          </button>
+          {note.note_type === 'checklist' && <ListChecks className="h-3 w-3 shrink-0 text-primary" />}
+          <span className="text-sm font-medium text-foreground truncate">
+            {note.title || 'Untitled'}
+          </span>
+        </div>
+        <div className="shrink-0">
+          <NoteActions note={note} />
+        </div>
+      </div>
+      <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+        <MetadataBadges note={note} showFolder={showFolder} />
+      </div>
+    </div>
+  );
+}
+
 function SortableNoteCard({ note, showFolder }: { note: NoteResponse; showFolder: boolean }) {
   const { activeNoteId, setActiveNote, updateNote } = useNotesStore();
   const isActive = activeNoteId === note.id;
@@ -60,8 +161,6 @@ function SortableNoteCard({ note, showFolder }: { note: NoteResponse; showFolder
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
-
-  const isPastDue = note.due_at ? new Date(note.due_at) < new Date() : false;
 
   return (
     <div
@@ -104,65 +203,9 @@ function SortableNoteCard({ note, showFolder }: { note: NoteResponse; showFolder
           </span>
         </div>
 
-        {/* Metadata row: date, folder, due, tags */}
+        {/* Metadata row */}
         <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-          <span className="text-[10px] text-muted-foreground">{formatDate(note.updated_at)}</span>
-
-          {showFolder && note.folder_id && (
-            <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
-              <FolderIcon className="h-2.5 w-2.5" />
-              <span className="truncate max-w-[60px]">folder</span>
-            </span>
-          )}
-
-          {note.due_at && (
-            <span className={cn(
-              'inline-flex items-center gap-0.5 text-[10px] font-medium rounded px-1 py-px',
-              isPastDue
-                ? 'bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400'
-                : 'bg-primary/10 text-primary'
-            )}>
-              <CalendarClock className="h-2.5 w-2.5" />
-              {formatDue(note.due_at)}
-            </span>
-          )}
-
-          {note.recurrence_rule && (
-            <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-primary rounded px-1 py-px bg-primary/10">
-              <Repeat className="h-2.5 w-2.5" />
-            </span>
-          )}
-
-          {note.note_type === 'checklist' && note.subtask_count === 0 && (() => {
-            const { done, total } = checklistProgressFromContent(note.content);
-            if (total === 0) return null;
-            const isComplete = done === total;
-            return (
-              <span className={cn(
-                'inline-flex items-center gap-0.5 text-[10px] font-medium rounded px-1 py-px',
-                isComplete
-                  ? 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary'
-                  : 'bg-primary/10 text-primary'
-              )}>
-                <ListChecks className="h-2.5 w-2.5" />
-                {done}/{total}
-              </span>
-            );
-          })()}
-
-          {note.tags.map((tag) => (
-            <span
-              key={tag.id}
-              className="inline-flex items-center gap-0.5 text-[10px] font-medium"
-              style={{ color: tag.color }}
-            >
-              <span
-                className="h-1.5 w-1.5 rounded-full shrink-0"
-                style={{ backgroundColor: tag.color }}
-              />
-              {tag.name}
-            </span>
-          ))}
+          <MetadataBadges note={note} showFolder={showFolder} />
         </div>
       </div>
 
@@ -204,7 +247,7 @@ function GroupHeader({ label, count, open, onToggle }: { label: string; count: n
   );
 }
 
-export function NoteList() {
+export function NoteList({ expanded = false }: { expanded?: boolean }) {
   const { notes, loading } = useNotesStore();
   const view = useUIStore((s) => s.view);
   const showFolder = view === 'all' || view === 'favorites';
@@ -289,29 +332,53 @@ export function NoteList() {
         </div>
       )}
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={allNoteIds} strategy={verticalListSortingStrategy}>
-          <div className="flex flex-col">
-            {groups.map((group) => (
-              <div key={group.label}>
-                <GroupHeader
-                  label={group.label}
-                  count={group.notes.length}
-                  open={!collapsed[group.label]}
-                  onToggle={() => toggleGroup(group.label)}
-                />
-                {!collapsed[group.label] && (
-                  <div className="flex flex-col px-1">
-                    {group.notes.map((note) => (
-                      <SortableNoteCard key={note.id} note={note} showFolder={showFolder} />
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </SortableContext>
-      </DndContext>
+      {expanded ? (
+        /* Grid layout for expanded view */
+        <div className="flex flex-col">
+          {groups.map((group) => (
+            <div key={group.label}>
+              <GroupHeader
+                label={group.label}
+                count={group.notes.length}
+                open={!collapsed[group.label]}
+                onToggle={() => toggleGroup(group.label)}
+              />
+              {!collapsed[group.label] && (
+                <div className="grid grid-cols-2 xl:grid-cols-3 gap-2 px-2 pb-2">
+                  {group.notes.map((note) => (
+                    <GridNoteCard key={note.id} note={note} showFolder={showFolder} />
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        /* Compact list layout with drag-and-drop */
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={allNoteIds} strategy={verticalListSortingStrategy}>
+            <div className="flex flex-col">
+              {groups.map((group) => (
+                <div key={group.label}>
+                  <GroupHeader
+                    label={group.label}
+                    count={group.notes.length}
+                    open={!collapsed[group.label]}
+                    onToggle={() => toggleGroup(group.label)}
+                  />
+                  {!collapsed[group.label] && (
+                    <div className="flex flex-col px-1">
+                      {group.notes.map((note) => (
+                        <SortableNoteCard key={note.id} note={note} showFolder={showFolder} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      )}
     </div>
   );
 }

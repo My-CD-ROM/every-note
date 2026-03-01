@@ -6,6 +6,7 @@ import {
   Download,
   FileText,
   FolderIcon,
+  Home,
   LayoutDashboard,
   MoreHorizontal,
   Pencil,
@@ -442,6 +443,10 @@ export function Sidebar() {
       </div>
 
       <ScrollArea className="flex-1 px-3">
+        <div className="space-y-0.5 mb-1">
+          <NavItem icon={Home} label="Home" active={view === 'home'} onClick={() => nav('home')} />
+        </div>
+
         {/* ── NOTES ── */}
         <SectionHeader label="Notes" />
         <div className="space-y-0.5">

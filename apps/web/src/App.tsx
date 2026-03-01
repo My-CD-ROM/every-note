@@ -17,8 +17,10 @@ import { useUIStore } from '@/stores/ui-store';
 import { useFoldersStore } from '@/stores/folders-store';
 import { useProjectsStore } from '@/stores/projects-store';
 import { useReminders } from '@/hooks/useReminders';
+import { DashboardPanel } from '@/components/DashboardPanel';
 
 const VIEW_TITLES: Record<string, string> = {
+  home: 'Home',
   all: 'All Notes',
   board: 'Board',
   trash: 'Trash',
@@ -51,7 +53,7 @@ function TopBar() {
     });
   };
 
-  const showCreateButton = !['trash', 'board', 'daily', 'completed', 'finance'].includes(view);
+  const showCreateButton = !['home', 'trash', 'board', 'daily', 'completed', 'finance'].includes(view);
 
   return (
     <div className="flex items-center justify-between border-b px-3 py-1.5 bg-background shrink-0">
@@ -103,6 +105,13 @@ function NotesPage() {
   return (
     <div className="flex h-full flex-col">
       <TopBar />
+
+      {/* Home — dashboard stats */}
+      {view === 'home' && (
+        <div className="flex-1 overflow-hidden">
+          <DashboardPanel />
+        </div>
+      )}
 
       {/* Finance — full-page view */}
       {view === 'finance' && (

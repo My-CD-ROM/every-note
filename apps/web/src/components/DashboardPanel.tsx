@@ -6,8 +6,8 @@ import { useUIStore } from '@/stores/ui-store';
 
 export function DashboardPanel() {
   const { notes, createNote, setActiveNote } = useNotesStore();
-  const { tree: folders, activeFolderId } = useFoldersStore();
-  const { view } = useUIStore();
+  const { tree: folders } = useFoldersStore();
+  const { setView } = useUIStore();
 
   const activeNotes = notes.filter((n) => !n.is_trashed);
   const pinnedCount = activeNotes.filter((n) => n.is_pinned).length;
@@ -19,19 +19,12 @@ export function DashboardPanel() {
     .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
     .slice(0, 5);
 
-  const isFolder = view === 'folder';
-  const stats = isFolder
-    ? [
-        { icon: FileText, label: 'Notes', value: activeNotes.length },
-        { icon: Star, label: 'Pinned', value: pinnedCount },
-        { icon: CheckCircle2, label: 'Completed', value: completedCount },
-      ]
-    : [
-        { icon: FileText, label: 'Notes', value: activeNotes.length },
-        { icon: FolderOpen, label: 'Folders', value: folders.length },
-        { icon: Star, label: 'Pinned', value: pinnedCount },
-        { icon: CheckCircle2, label: 'Completed', value: completedCount },
-      ];
+  const stats = [
+    { icon: FileText, label: 'Notes', value: activeNotes.length },
+    { icon: FolderOpen, label: 'Folders', value: folders.length },
+    { icon: Star, label: 'Pinned', value: pinnedCount },
+    { icon: CheckCircle2, label: 'Completed', value: completedCount },
+  ];
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -52,6 +45,11 @@ export function DashboardPanel() {
     return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   };
 
+  const handleClickNote = (noteId: string) => {
+    setActiveNote(noteId);
+    setView('all');
+  };
+
   return (
     <div className="flex h-full flex-col items-center justify-center px-8 animate-fade-in-up">
       <div className="w-full max-w-md space-y-6">
@@ -65,7 +63,7 @@ export function DashboardPanel() {
         </div>
 
         {/* Stats */}
-        <div className={`grid gap-3 ${isFolder ? 'grid-cols-3' : 'grid-cols-4'}`}>
+        <div className="grid grid-cols-4 gap-3">
           {stats.map((s) => (
             <div key={s.label} className="rounded-lg border bg-card px-3 py-2.5 text-center">
               <s.icon className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
@@ -80,7 +78,7 @@ export function DashboardPanel() {
           <Button
             size="sm"
             className="flex-1 gap-1.5"
-            onClick={() => createNote({ folder_id: view === 'folder' ? activeFolderId : null })}
+            onClick={() => createNote({})}
           >
             <Plus className="h-3.5 w-3.5" />
             New Note
@@ -89,10 +87,7 @@ export function DashboardPanel() {
             size="sm"
             variant="outline"
             className="flex-1 gap-1.5"
-            onClick={() => createNote({
-              folder_id: view === 'folder' ? activeFolderId : null,
-              note_type: 'checklist',
-            })}
+            onClick={() => createNote({ note_type: 'checklist' })}
           >
             <CheckCircle2 className="h-3.5 w-3.5" />
             New Checklist
@@ -107,7 +102,7 @@ export function DashboardPanel() {
               {recentNotes.map((note) => (
                 <button
                   key={note.id}
-                  onClick={() => setActiveNote(note.id)}
+                  onClick={() => handleClickNote(note.id)}
                   className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-left hover:bg-muted/50 transition-colors group"
                 >
                   <Calendar className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />

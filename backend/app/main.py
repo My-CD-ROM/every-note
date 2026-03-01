@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import init_db
-from app.routers import daily, export, folders, graph, notes, search, tags
+from app.routers import daily, export, folders, graph, notes, projects, search, tags
 
 
 @asynccontextmanager
@@ -26,6 +26,7 @@ app.add_middleware(
 app.include_router(notes.router)
 app.include_router(folders.router)
 app.include_router(tags.router)
+app.include_router(projects.router)
 app.include_router(search.router)
 app.include_router(daily.router)
 app.include_router(export.router)

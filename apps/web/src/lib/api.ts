@@ -1,6 +1,7 @@
 import type {
   NoteResponse,
   RecurrenceRule,
+  AttachmentResponse,
   FolderResponse,
   FolderTree,
   TagResponse,
@@ -16,6 +17,7 @@ import type {
 export type {
   TagBrief,
   RecurrenceRule,
+  AttachmentResponse,
   NoteResponse,
   FolderResponse,
   FolderTree,
@@ -108,6 +110,33 @@ export const notesApi = {
   },
   reorder(items: { id: string; position: number }[]) {
     return request<{ ok: boolean }>('/notes/reorder', { method: 'POST', body: JSON.stringify({ items }) });
+  },
+};
+
+// --- Attachments ---
+
+export const attachmentsApi = {
+  list(noteId: string) {
+    return request<AttachmentResponse[]>(`/notes/${noteId}/attachments`);
+  },
+  async upload(noteId: string, file: File): Promise<AttachmentResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${BASE}/notes/${noteId}/attachments`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.detail || `HTTP ${res.status}`);
+    }
+    return res.json();
+  },
+  fileUrl(attachmentId: string) {
+    return `${BASE}/attachments/${attachmentId}/file`;
+  },
+  delete(id: string) {
+    return request<{ ok: boolean }>(`/attachments/${id}`, { method: 'DELETE' });
   },
 };
 

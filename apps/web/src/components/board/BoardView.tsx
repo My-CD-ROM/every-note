@@ -10,7 +10,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
-import { CalendarClock, Check, CheckCircle2, GripVertical, LayoutDashboard, ListChecks, Star } from 'lucide-react';
+import { CalendarClock, Check, CheckCircle2, GripVertical, KanbanSquare, LayoutDashboard, ListChecks, Star } from 'lucide-react';
 import { checklistProgressFromContent } from '@/lib/checklist';
 import { STATUSES } from '@/lib/statuses';
 import { cn } from '@/lib/utils';
@@ -263,10 +263,8 @@ function DroppableColumnWrapper({ column, projectId }: { column: StatusColumn; p
 
 export function BoardView() {
   const { notes, fetchNotes } = useNotesStore();
-  const { activeProjectId, projects } = useProjectsStore();
+  const { activeProjectId } = useProjectsStore();
   const [activeDragNote, setActiveDragNote] = useState<NoteResponse | null>(null);
-
-  const activeProject = projects.find((p) => p.id === activeProjectId);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -342,6 +340,33 @@ export function BoardView() {
         <div className="text-center text-sm">
           <p>No project selected</p>
           <p className="text-xs text-muted-foreground/60">Select a project from the sidebar or create one</p>
+        </div>
+      </div>
+    );
+  }
+
+  const totalNotes = columns.reduce((sum, col) => sum + col.notes.length, 0);
+
+  if (totalNotes === 0) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center text-muted-foreground gap-3 p-8">
+        <KanbanSquare className="h-10 w-10 stroke-1" />
+        <div className="text-center space-y-1">
+          <p className="text-sm font-medium">This board is empty</p>
+          <p className="text-xs text-muted-foreground/60">
+            Add notes using the "+ Add note..." input in any column below, or drag existing notes here.
+          </p>
+        </div>
+        <div className="flex gap-4 mt-4 overflow-x-auto w-full justify-center">
+          {STATUSES.map((s) => (
+            <div key={s.id} className="w-64 flex-shrink-0">
+              <div className="flex items-center gap-2 mb-2 px-0.5">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: s.color }} />
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">{s.label}</span>
+              </div>
+              <QuickAddInput status={s.id} projectId={activeProjectId} />
+            </div>
+          ))}
         </div>
       </div>
     );

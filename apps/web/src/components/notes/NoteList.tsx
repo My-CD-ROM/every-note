@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { CalendarClock, ChevronRight, FileText, FolderIcon, GripVertical, ListChecks, Plus, Repeat, Search, Star } from 'lucide-react';
+import { CalendarClock, ChevronRight, FileText, FolderIcon, GripVertical, ListChecks, Pin, Plus, Repeat, Search, Square, Star, Trash2, X } from 'lucide-react';
 import { checklistProgressFromContent } from '@/lib/checklist';
 import {
   DndContext,
@@ -140,7 +140,23 @@ function InlineDueDateButton({ note }: { note: NoteResponse }) {
   );
 }
 
-function GridNoteCard({ note, showFolder }: { note: NoteResponse; showFolder: boolean }) {
+function SelectCheckbox({ selected, onToggle }: { selected: boolean; onToggle: (e: React.MouseEvent) => void }) {
+  return (
+    <button
+      onClick={onToggle}
+      className={cn(
+        'h-4 w-4 rounded border shrink-0 flex items-center justify-center transition-all',
+        selected
+          ? 'bg-primary border-primary text-white'
+          : 'border-muted-foreground/30 hover:border-primary/60 bg-transparent'
+      )}
+    >
+      {selected && <Square className="h-2.5 w-2.5 fill-current" />}
+    </button>
+  );
+}
+
+function GridNoteCard({ note, showFolder, selected, hasSelection, onToggleSelect }: { note: NoteResponse; showFolder: boolean; selected: boolean; hasSelection: boolean; onToggleSelect: (e: React.MouseEvent) => void }) {
   const { activeNoteId, setActiveNote, updateNote } = useNotesStore();
   const isActive = activeNoteId === note.id;
 
@@ -148,23 +164,33 @@ function GridNoteCard({ note, showFolder }: { note: NoteResponse; showFolder: bo
     <div
       className={cn(
         'group rounded-lg border border-border bg-card p-3 transition-colors cursor-pointer hover:border-primary/30 hover:bg-muted/50',
-        isActive && 'border-primary/40 bg-primary/5 ring-1 ring-primary/20'
+        isActive && 'border-primary/40 bg-primary/5 ring-1 ring-primary/20',
+        selected && 'border-primary/40 bg-primary/5 ring-1 ring-primary/20'
       )}
-      onClick={() => setActiveNote(isActive ? null : note.id)}
+      onClick={() => {
+        if (hasSelection) { onToggleSelect({ stopPropagation: () => {} } as React.MouseEvent); return; }
+        setActiveNote(isActive ? null : note.id);
+      }}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-1.5 min-w-0 flex-1">
-          <button
-            onClick={(e) => { e.stopPropagation(); updateNote(note.id, { is_pinned: !note.is_pinned }); }}
-            className={cn(
-              'h-3.5 w-3.5 shrink-0 transition-colors',
-              note.is_pinned
-                ? 'text-amber-400'
-                : 'text-transparent group-hover:text-muted-foreground/30 hover:!text-amber-400'
-            )}
-          >
-            <Star className={cn('h-3 w-3', note.is_pinned && 'fill-amber-400')} />
-          </button>
+          <div className={cn('shrink-0', hasSelection ? 'block' : 'hidden group-hover:block')}>
+            <SelectCheckbox selected={selected} onToggle={onToggleSelect} />
+          </div>
+          {!hasSelection && (
+            <button
+              onClick={(e) => { e.stopPropagation(); updateNote(note.id, { is_pinned: !note.is_pinned }); }}
+              className={cn(
+                'h-3.5 w-3.5 shrink-0 transition-colors',
+                hasSelection ? 'hidden' : '',
+                note.is_pinned
+                  ? 'text-amber-400'
+                  : 'text-transparent group-hover:text-muted-foreground/30 hover:!text-amber-400'
+              )}
+            >
+              <Star className={cn('h-3 w-3', note.is_pinned && 'fill-amber-400')} />
+            </button>
+          )}
           {note.note_type === 'checklist' && <ListChecks className="h-3 w-3 shrink-0 text-primary" />}
           <span className="text-sm font-medium text-foreground truncate">
             {note.title || 'Untitled'}
@@ -286,6 +312,83 @@ function GroupHeader({ label, count, open, onToggle }: { label: string; count: n
   );
 }
 
+function BulkActionBar({ selectedIds, onClear, notes }: { selectedIds: Set<string>; onClear: () => void; notes: NoteResponse[] }) {
+  const { updateNote, deleteNote } = useNotesStore();
+  const tree = useFoldersStore((s) => s.tree);
+  const [showFolders, setShowFolders] = useState(false);
+  const count = selectedIds.size;
+
+  const handlePinAll = async () => {
+    const selected = notes.filter((n) => selectedIds.has(n.id));
+    const allPinned = selected.every((n) => n.is_pinned);
+    for (const n of selected) {
+      await updateNote(n.id, { is_pinned: !allPinned });
+    }
+    onClear();
+  };
+
+  const handleTrashAll = async () => {
+    for (const id of selectedIds) {
+      await deleteNote(id);
+    }
+    onClear();
+  };
+
+  const handleMoveToFolder = async (folderId: string | null) => {
+    for (const id of selectedIds) {
+      await updateNote(id, { folder_id: folderId });
+    }
+    setShowFolders(false);
+    onClear();
+  };
+
+  const flatFolders = useMemo(() => {
+    const result: { id: string; name: string; depth: number }[] = [];
+    const walk = (nodes: typeof tree, depth: number) => {
+      for (const f of nodes) {
+        result.push({ id: f.id, name: f.name, depth });
+        walk(f.children, depth + 1);
+      }
+    };
+    walk(tree, 0);
+    return result;
+  }, [tree]);
+
+  return (
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-lg border bg-card px-3 py-2 shadow-lg animate-fade-in-up">
+      <span className="text-xs font-medium text-muted-foreground">{count} selected</span>
+      <div className="h-4 w-px bg-border" />
+      <button onClick={handlePinAll} className="flex items-center gap-1 text-xs px-2 py-1 rounded hover:bg-muted transition-colors" title="Pin / Unpin">
+        <Pin className="h-3 w-3" /> Pin
+      </button>
+      <div className="relative">
+        <button onClick={() => setShowFolders(!showFolders)} className="flex items-center gap-1 text-xs px-2 py-1 rounded hover:bg-muted transition-colors" title="Move to folder">
+          <FolderIcon className="h-3 w-3" /> Move
+        </button>
+        {showFolders && (
+          <div className="absolute bottom-full left-0 mb-1 w-44 rounded-md border bg-card shadow-lg py-1 max-h-48 overflow-y-auto">
+            <button onClick={() => handleMoveToFolder(null)} className="w-full text-left text-xs px-3 py-1.5 hover:bg-muted transition-colors text-muted-foreground">
+              No folder
+            </button>
+            {flatFolders.map((f) => (
+              <button key={f.id} onClick={() => handleMoveToFolder(f.id)} className="w-full text-left text-xs px-3 py-1.5 hover:bg-muted transition-colors" style={{ paddingLeft: `${f.depth * 12 + 12}px` }}>
+                {f.name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <button onClick={handleTrashAll} className="flex items-center gap-1 text-xs px-2 py-1 rounded hover:bg-muted text-red-500 transition-colors" title="Move to trash">
+        <Trash2 className="h-3 w-3" /> Trash
+      </button>
+      <div className="h-4 w-px bg-border" />
+      <button onClick={onClear} className="flex items-center gap-1 text-xs px-1.5 py-1 rounded hover:bg-muted transition-colors text-muted-foreground" title="Clear selection">
+        <X className="h-3 w-3" />
+      </button>
+    </div>
+  );
+}
+
 export function NoteList({ expanded = false }: { expanded?: boolean }) {
   const { notes, loading, createNote } = useNotesStore();
   const view = useUIStore((s) => s.view);
@@ -293,6 +396,7 @@ export function NoteList({ expanded = false }: { expanded?: boolean }) {
   const showFolder = view === 'all' || view === 'favorites';
   const [filter, setFilter] = useState('');
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -331,6 +435,19 @@ export function NoteList({ expanded = false }: { expanded?: boolean }) {
   const toggleGroup = useCallback((label: string) => {
     setCollapsed((prev) => ({ ...prev, [label]: !prev[label] }));
   }, []);
+
+  const toggleSelect = useCallback((noteId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(noteId)) next.delete(noteId);
+      else next.add(noteId);
+      return next;
+    });
+  }, []);
+
+  const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
+  const hasSelection = selectedIds.size > 0;
 
   if (loading) {
     return (
@@ -405,7 +522,7 @@ export function NoteList({ expanded = false }: { expanded?: boolean }) {
               {!collapsed[group.label] && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 px-2 pb-2">
                   {group.notes.map((note) => (
-                    <GridNoteCard key={note.id} note={note} showFolder={showFolder} />
+                    <GridNoteCard key={note.id} note={note} showFolder={showFolder} selected={selectedIds.has(note.id)} hasSelection={hasSelection} onToggleSelect={(e) => toggleSelect(note.id, e)} />
                   ))}
                 </div>
               )}
@@ -438,6 +555,8 @@ export function NoteList({ expanded = false }: { expanded?: boolean }) {
           </SortableContext>
         </DndContext>
       )}
+
+      {hasSelection && <BulkActionBar selectedIds={selectedIds} onClear={clearSelection} notes={filtered} />}
     </div>
   );
 }

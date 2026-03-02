@@ -11,7 +11,7 @@ import { NotificationCenter } from '@/components/reminders/NotificationCenter';
 import { TemplatePicker } from '@/components/notes/TemplatePicker';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Menu, Plus } from 'lucide-react';
+import { ArrowLeft, Menu, Plus } from 'lucide-react';
 import { useNotesStore } from '@/stores/notes-store';
 import { useUIStore } from '@/stores/ui-store';
 import { useFoldersStore } from '@/stores/folders-store';
@@ -34,7 +34,7 @@ const VIEW_TITLES: Record<string, string> = {
 };
 
 function TopBar() {
-  const { createNote, setActiveNote } = useNotesStore();
+  const { createNote, activeNoteId, setActiveNote } = useNotesStore();
   const { setMobileSidebarOpen, view } = useUIStore();
   const activeFolderId = useFoldersStore((s) => s.activeFolderId);
   const { activeProjectId, projects } = useProjectsStore();
@@ -59,9 +59,15 @@ function TopBar() {
   return (
     <div className="flex items-center justify-between border-b px-3 py-1.5 bg-background shrink-0">
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden" onClick={() => setMobileSidebarOpen(true)}>
-          <Menu className="h-4 w-4" />
-        </Button>
+        {activeNoteId ? (
+          <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden" onClick={() => setActiveNote(null)}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        ) : (
+          <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden" onClick={() => setMobileSidebarOpen(true)}>
+            <Menu className="h-4 w-4" />
+          </Button>
+        )}
         <h2 className="text-sm font-semibold">
           {activeProject ? `${activeProject.icon ? activeProject.icon + ' ' : ''}${activeProject.name}` : VIEW_TITLES[view] ?? 'Notes'}
         </h2>

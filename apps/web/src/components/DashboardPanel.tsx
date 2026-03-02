@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 import { AlertCircle, Calendar, CalendarClock, CheckCircle2, Clock, Plus, Repeat, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { cn } from '@/lib/utils';
 import { useNotesStore } from '@/stores/notes-store';
 import { useUIStore } from '@/stores/ui-store';
 import type { NoteResponse } from '@/lib/api';
@@ -60,8 +59,6 @@ export function DashboardPanel() {
 
   const { overdue, dueToday, upcoming, pinned, recurring, recentNotes } = useMemo(() => {
     const active = notes.filter((n) => !n.is_trashed && !n.is_completed);
-    const now = new Date();
-
     const over: NoteResponse[] = [];
     const today: NoteResponse[] = [];
     // Group upcoming by days-from-now (1..7)

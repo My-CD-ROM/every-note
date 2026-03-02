@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { CalendarClock, ChevronRight, FileText, FolderIcon, GripVertical, ListChecks, Plus, Repeat, Search, Star } from 'lucide-react';
 import { checklistProgressFromContent } from '@/lib/checklist';
 import {
@@ -105,6 +105,41 @@ function MetadataBadges({ note, showFolder }: { note: NoteResponse; showFolder: 
   );
 }
 
+function InlineDueDateButton({ note }: { note: NoteResponse }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { updateNote } = useNotesStore();
+
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        inputRef.current?.showPicker();
+      }}
+      className={cn(
+        'h-5 w-5 flex items-center justify-center rounded transition-colors',
+        note.due_at
+          ? 'text-primary/60 hover:text-primary'
+          : 'text-transparent group-hover:text-muted-foreground/30 hover:!text-primary/60'
+      )}
+      title={note.due_at ? 'Change due date' : 'Set due date'}
+    >
+      <CalendarClock className="h-3 w-3" />
+      <input
+        ref={inputRef}
+        type="datetime-local"
+        className="sr-only"
+        value={note.due_at ? note.due_at.slice(0, 16) : ''}
+        onChange={(e) => {
+          e.stopPropagation();
+          const val = e.target.value;
+          updateNote(note.id, { due_at: val ? new Date(val).toISOString() : null });
+        }}
+        onClick={(e) => e.stopPropagation()}
+      />
+    </button>
+  );
+}
+
 function GridNoteCard({ note, showFolder }: { note: NoteResponse; showFolder: boolean }) {
   const { activeNoteId, setActiveNote, updateNote } = useNotesStore();
   const isActive = activeNoteId === note.id;
@@ -135,7 +170,8 @@ function GridNoteCard({ note, showFolder }: { note: NoteResponse; showFolder: bo
             {note.title || 'Untitled'}
           </span>
         </div>
-        <div className="shrink-0">
+        <div className="flex items-center gap-0.5 shrink-0">
+          <InlineDueDateButton note={note} />
           <NoteActions note={note} />
         </div>
       </div>

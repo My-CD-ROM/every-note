@@ -24,10 +24,8 @@ export function NoteModal() {
       <DialogContent
         showCloseButton={false}
         className={cn(
-          'p-0 gap-0 overflow-hidden',
-          isBoardContext
-            ? 'sm:max-w-4xl max-h-[85vh]'
-            : 'sm:max-w-3xl max-h-[85vh]',
+          'p-0 gap-0 overflow-hidden max-w-[calc(100vw-1rem)] max-h-[calc(100vh-1rem)]',
+          isBoardContext ? 'sm:max-w-4xl sm:max-h-[85vh]' : 'sm:max-w-3xl sm:max-h-[85vh]'
         )}
         onEscapeKeyDown={(e) => {
           if (hook.duePopoverOpen || hook.tagPopoverOpen || hook.recurrencePopoverOpen || hook.reminderPopoverOpen) {

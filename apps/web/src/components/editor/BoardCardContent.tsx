@@ -1,4 +1,5 @@
-import { CalendarClock, Check, CheckCircle2, ChevronRight, Loader2, Repeat, Undo2, X } from 'lucide-react';
+import { useState } from 'react';
+import { CalendarClock, Check, CheckCircle2, ChevronRight, ChevronUp, Loader2, Repeat, Settings2, Undo2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -66,12 +67,14 @@ export function BoardCardContent({ hook, onClose }: Props) {
     handleUploadFiles,
   } = hook;
 
+  const [showMobileMetadata, setShowMobileMetadata] = useState(false);
+
   if (!note) return null;
 
   const isPastDue = note.due_at && new Date(note.due_at) < new Date();
 
   return (
-    <div ref={wrapperRef} className="flex flex-col max-h-[85vh] animate-fade-in-up">
+    <div ref={wrapperRef} className="flex flex-col max-h-[calc(100vh-1rem)] sm:max-h-[85vh] animate-fade-in-up">
       {/* Header bar: close + title + save status */}
       <div className="flex items-center gap-1 border-b px-4 py-2 bg-background/50 shrink-0">
         <Button
@@ -90,6 +93,15 @@ export function BoardCardContent({ hook, onClose }: Props) {
           placeholder="Untitled"
           className="border-0 px-0 text-lg font-semibold shadow-none focus-visible:ring-0"
         />
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 md:hidden"
+          onClick={() => setShowMobileMetadata(!showMobileMetadata)}
+          title="Toggle metadata"
+        >
+          {showMobileMetadata ? <ChevronUp className="h-4 w-4" /> : <Settings2 className="h-4 w-4" />}
+        </Button>
         <div className="flex items-center gap-1 shrink-0 min-w-[60px] justify-end">
           {saving && (
             <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
@@ -266,6 +278,13 @@ export function BoardCardContent({ hook, onClose }: Props) {
           </ScrollArea>
         </div>
       </div>
+
+      {/* Mobile metadata (collapsible, below editor) */}
+      {showMobileMetadata && (
+        <div className="md:hidden border-t">
+          <MetadataSidebar hook={hook} />
+        </div>
+      )}
     </div>
   );
 }

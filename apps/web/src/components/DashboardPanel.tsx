@@ -1,8 +1,7 @@
 import { useMemo } from 'react';
-import { AlertCircle, Calendar, CalendarClock, CheckCircle2, Clock, Plus } from 'lucide-react';
+import { AlertCircle, Calendar, CalendarClock, CheckCircle2, Clock, Plus, Repeat, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { cn } from '@/lib/utils';
 import { useNotesStore } from '@/stores/notes-store';
 import { useUIStore } from '@/stores/ui-store';
 import type { NoteResponse } from '@/lib/api';
@@ -58,10 +57,8 @@ export function DashboardPanel() {
   const { notes, createNote, setActiveNote } = useNotesStore();
   const { setView } = useUIStore();
 
-  const { overdue, dueToday, upcoming, recentNotes } = useMemo(() => {
+  const { overdue, dueToday, upcoming, pinned, recurring, recentNotes } = useMemo(() => {
     const active = notes.filter((n) => !n.is_trashed && !n.is_completed);
-    const now = new Date();
-
     const over: NoteResponse[] = [];
     const today: NoteResponse[] = [];
     // Group upcoming by days-from-now (1..7)
@@ -94,11 +91,17 @@ export function DashboardPanel() {
         notes: items.sort((a, b) => new Date(a.due_at!).getTime() - new Date(b.due_at!).getTime()),
       }));
 
+    const pinned = active.filter((n) => n.is_pinned)
+      .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+
+    const recurring = active.filter((n) => n.recurrence_rule && !n.due_at)
+      .sort((a, b) => a.title.localeCompare(b.title));
+
     const recent = [...active]
       .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
       .slice(0, 5);
 
-    return { overdue: over, dueToday: today, upcoming: upcomingGroups, recentNotes: recent };
+    return { overdue: over, dueToday: today, upcoming: upcomingGroups, pinned, recurring, recentNotes: recent };
   }, [notes]);
 
   const greeting = () => {
@@ -147,6 +150,28 @@ export function DashboardPanel() {
               New Checklist
             </Button>
           </div>
+
+          {/* Pinned */}
+          {pinned.length > 0 && (
+            <div>
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Star className="h-3.5 w-3.5 text-amber-500" />
+                <h3 className="text-xs font-medium text-amber-600 dark:text-amber-400 uppercase tracking-wide">Pinned</h3>
+              </div>
+              <div className="rounded-lg border bg-card">
+                {pinned.map((note) => (
+                  <button
+                    key={note.id}
+                    onClick={() => handleClickNote(note.id)}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left hover:bg-muted/50 transition-colors"
+                  >
+                    <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 shrink-0" />
+                    <span className="text-sm truncate flex-1">{note.title || 'Untitled'}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Overdue */}
           {overdue.length > 0 && (
@@ -215,6 +240,31 @@ export function DashboardPanel() {
                       />
                     ))}
                   </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Recurring */}
+          {recurring.length > 0 && (
+            <div>
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Repeat className="h-3.5 w-3.5 text-muted-foreground/60" />
+                <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Recurring</h3>
+              </div>
+              <div className="rounded-lg border bg-card">
+                {recurring.map((note) => (
+                  <button
+                    key={note.id}
+                    onClick={() => handleClickNote(note.id)}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left hover:bg-muted/50 transition-colors"
+                  >
+                    <Repeat className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0" />
+                    <span className="text-sm truncate flex-1">{note.title || 'Untitled'}</span>
+                    <span className="text-[10px] text-muted-foreground/50 shrink-0 capitalize">
+                      {note.recurrence_rule?.freq}
+                    </span>
+                  </button>
                 ))}
               </div>
             </div>

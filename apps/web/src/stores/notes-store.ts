@@ -9,7 +9,7 @@ interface NotesState {
 
   fetchNotes: (params?: { folder_id?: string; tag_id?: string; trashed?: boolean; pinned?: boolean; completed?: boolean; project_id?: string }) => Promise<void>;
   setActiveNote: (id: string | null) => void;
-  createNote: (data: { title?: string; content?: string; folder_id?: string | null; note_type?: string; parent_id?: string | null; project_id?: string | null }) => Promise<NoteResponse>;
+  createNote: (data: { title?: string; content?: string; folder_id?: string | null; note_type?: string; parent_id?: string | null; project_id?: string | null; status?: string | null }) => Promise<NoteResponse>;
   updateNote: (id: string, data: { title?: string; content?: string; folder_id?: string | null; is_pinned?: boolean; due_at?: string | null; note_type?: string; parent_id?: string | null; status?: string | null; project_id?: string | null; recurrence_rule?: RecurrenceRule | null }) => Promise<void>;
   deleteNote: (id: string, permanent?: boolean) => Promise<void>;
   restoreNote: (id: string) => Promise<void>;
@@ -43,7 +43,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
   updateNote: async (id, data) => {
     // Optimistic update for instant UI feedback
     set((s) => ({
-      notes: s.notes.map((n) => (n.id === id ? { ...n, ...data } : n)),
+      notes: s.notes.map((n) => (n.id === id ? { ...n, ...data } as NoteResponse : n)),
     }));
     try {
       const updated = await notesApi.update(id, data);

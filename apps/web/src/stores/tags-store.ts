@@ -10,6 +10,7 @@ interface TagsState {
   fetchTags: () => Promise<void>;
   setActiveTag: (id: string | null) => void;
   createTag: (data: { name: string; color?: string }) => Promise<TagResponse>;
+  updateTag: (id: string, data: { name?: string; color?: string }) => Promise<void>;
   deleteTag: (id: string) => Promise<void>;
 }
 
@@ -34,6 +35,11 @@ export const useTagsStore = create<TagsState>((set) => ({
     const tag = await tagsApi.create(data);
     set((s) => ({ tags: [...s.tags, tag] }));
     return tag;
+  },
+
+  updateTag: async (id, data) => {
+    const updated = await tagsApi.update(id, data);
+    set((s) => ({ tags: s.tags.map((t) => (t.id === id ? updated : t)) }));
   },
 
   deleteTag: async (id) => {

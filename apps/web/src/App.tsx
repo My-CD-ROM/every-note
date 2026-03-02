@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { AppShell } from '@/components/layout/AppShell';
 import { NoteList } from '@/components/notes/NoteList';
-import { NoteEditor } from '@/components/editor/NoteEditor';
+import { NoteModal } from '@/components/editor/NoteModal';
 import { SearchPalette } from '@/components/SearchPalette';
 import { CalendarView } from '@/components/calendar/CalendarView';
 import { BoardView } from '@/components/board/BoardView';
@@ -11,7 +11,7 @@ import { NotificationCenter } from '@/components/reminders/NotificationCenter';
 import { TemplatePicker } from '@/components/notes/TemplatePicker';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Menu, Plus } from 'lucide-react';
+import { Menu, Plus } from 'lucide-react';
 import { useNotesStore } from '@/stores/notes-store';
 import { useUIStore } from '@/stores/ui-store';
 import { useFoldersStore } from '@/stores/folders-store';
@@ -34,7 +34,7 @@ const VIEW_TITLES: Record<string, string> = {
 };
 
 function TopBar() {
-  const { createNote, activeNoteId, setActiveNote } = useNotesStore();
+  const { createNote, setActiveNote } = useNotesStore();
   const { setMobileSidebarOpen, view } = useUIStore();
   const activeFolderId = useFoldersStore((s) => s.activeFolderId);
   const { activeProjectId, projects } = useProjectsStore();
@@ -59,15 +59,9 @@ function TopBar() {
   return (
     <div className="flex items-center justify-between border-b px-3 py-1.5 bg-background shrink-0">
       <div className="flex items-center gap-2">
-        {activeNoteId ? (
-          <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden" onClick={() => setActiveNote(null)}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        ) : (
-          <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden" onClick={() => setMobileSidebarOpen(true)}>
-            <Menu className="h-4 w-4" />
-          </Button>
-        )}
+        <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden" onClick={() => setMobileSidebarOpen(true)}>
+          <Menu className="h-4 w-4" />
+        </Button>
         <h2 className="text-sm font-semibold">
           {activeProject ? `${activeProject.icon ? activeProject.icon + ' ' : ''}${activeProject.name}` : VIEW_TITLES[view] ?? 'Notes'}
         </h2>
@@ -99,12 +93,11 @@ function TopBar() {
 }
 
 function NotesPage() {
-  const { activeNoteId } = useNotesStore();
   const { view } = useUIStore();
 
   useRouter();
 
-  // Views that use the list + editor two-panel layout
+  // Views that render the note list grid
   const isListView = ['all', 'folder', 'tag', 'trash', 'favorites', 'completed'].includes(view);
 
   return (
@@ -133,38 +126,21 @@ function NotesPage() {
 
       {/* Kanban board view */}
       {view === 'board' && (
-        <div className="flex flex-1 overflow-hidden">
-          <div className="flex-1 overflow-x-auto bg-muted/30">
-            <BoardView />
-          </div>
-          {activeNoteId && (
-            <div className="hidden md:block w-[480px] flex-shrink-0 border-l min-w-0">
-              <NoteEditor />
-            </div>
-          )}
+        <div className="flex-1 overflow-x-auto bg-muted/30">
+          <BoardView />
         </div>
       )}
 
-      {/* Adaptive layout: full-width grid when browsing, split when editing */}
-      {isListView && !activeNoteId && (
+      {/* List views: always full-width grid. Modal handles editing. */}
+      {isListView && (
         <div className="flex-1 overflow-hidden">
           <ScrollArea className="h-full">
             <NoteList expanded />
           </ScrollArea>
         </div>
       )}
-      {isListView && activeNoteId && (
-        <div className="flex flex-1 overflow-hidden">
-          <div className="hidden md:flex w-72 flex-shrink-0 border-r flex-col bg-muted/20">
-            <ScrollArea className="flex-1">
-              <NoteList />
-            </ScrollArea>
-          </div>
-          <div className="flex-1 min-w-0">
-            <NoteEditor />
-          </div>
-        </div>
-      )}
+
+      <NoteModal />
     </div>
   );
 }

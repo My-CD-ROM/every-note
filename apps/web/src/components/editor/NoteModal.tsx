@@ -3,17 +3,8 @@ import { useNotesStore } from '@/stores/notes-store';
 import { useUIStore } from '@/stores/ui-store';
 import { useNoteEditor } from '@/hooks/useNoteEditor';
 import { cn } from '@/lib/utils';
-
-type NoteEditorHook = ReturnType<typeof useNoteEditor>;
-
-// Temporary stubs — replaced by real components in Tasks 4 & 5
-function BoardCardContent({ hook, onClose: _onClose }: { hook: NoteEditorHook; onClose: () => void }) {
-  return <div className="p-6">Board card editor (stub) – {hook.note?.title}</div>;
-}
-
-function NoteEditorContent({ hook, onClose: _onClose }: { hook: NoteEditorHook; onClose: () => void }) {
-  return <div className="p-6">Note editor (stub) – {hook.note?.title}</div>;
-}
+import { BoardCardContent } from './BoardCardContent';
+import { NoteEditorContent } from './NoteEditorContent';
 
 export function NoteModal() {
   const { activeNoteId, setActiveNote } = useNotesStore();

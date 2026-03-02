@@ -163,7 +163,34 @@ function NotesPage() {
   );
 }
 
+function useGlobalShortcuts() {
+  const { setSearchOpen } = useUIStore();
+  const { createNote } = useNotesStore();
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const mod = e.metaKey || e.ctrlKey;
+      // Ctrl/Cmd+K — open search
+      if (mod && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+      // Ctrl/Cmd+N — new note (only when not in an input)
+      if (mod && e.key === 'n') {
+        const tag = (e.target as HTMLElement)?.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+        e.preventDefault();
+        createNote({});
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [setSearchOpen, createNote]);
+}
+
 function App() {
+  useGlobalShortcuts();
+
   return (
     <TooltipProvider>
       <AppShell>

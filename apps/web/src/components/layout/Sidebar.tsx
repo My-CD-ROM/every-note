@@ -295,6 +295,106 @@ function SectionHeader({ label, action }: { label: string; action?: React.ReactN
   );
 }
 
+function TagItem({ tag }: { tag: { id: string; name: string; color: string; note_count: number } }) {
+  const [renaming, setRenaming] = useState(false);
+  const [renameName, setRenameName] = useState(tag.name);
+  const { activeTagId, setActiveTag, updateTag, deleteTag } = useTagsStore();
+  const setActiveFolder = useFoldersStore((s) => s.setActiveFolder);
+  const { setActiveNote, fetchNotes } = useNotesStore();
+  const { setView, setMobileSidebarOpen: closeMobile } = useUIStore();
+
+  const isActive = activeTagId === tag.id;
+
+  const handleRename = async () => {
+    const trimmed = renameName.trim();
+    if (trimmed && trimmed !== tag.name) {
+      await updateTag(tag.id, { name: trimmed });
+    }
+    setRenaming(false);
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm(`Delete tag "${tag.name}"?`)) return;
+    if (activeTagId === tag.id) {
+      setActiveTag(null);
+      setView('all');
+      fetchNotes();
+    }
+    await deleteTag(tag.id);
+  };
+
+  return (
+    <div className="group flex items-center">
+      <button
+        className={cn(
+          'flex flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors',
+          'hover:bg-sidebar-accent',
+          isActive && 'bg-sidebar-accent font-medium'
+        )}
+        onClick={() => {
+          if (renaming) return;
+          setActiveTag(tag.id);
+          setActiveFolder(null);
+          setView('tag');
+          setActiveNote(null);
+          closeMobile(false);
+          fetchNotes({ tag_id: tag.id });
+        }}
+      >
+        <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />
+        {renaming ? (
+          <Input
+            value={renameName}
+            onChange={(e) => setRenameName(e.target.value)}
+            onKeyDown={(e) => {
+              e.stopPropagation();
+              if (e.key === 'Enter') handleRename();
+              if (e.key === 'Escape') { setRenaming(false); setRenameName(tag.name); }
+            }}
+            onBlur={handleRename}
+            className="h-5 text-sm px-1 py-0"
+            autoFocus
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <>
+            <span className="truncate">{tag.name}</span>
+            {tag.note_count > 0 && (
+              <span className="ml-auto text-xs text-muted-foreground/60">{tag.note_count}</span>
+            )}
+          </>
+        )}
+      </button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            className="mr-1 h-5 w-5 flex items-center justify-center rounded hover:bg-sidebar-accent opacity-0 group-hover:opacity-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
+          <DropdownMenuItem onClick={() => { setRenaming(true); setRenameName(tag.name); }}>
+            <Pencil className="h-3.5 w-3.5 mr-2" />
+            Rename
+          </DropdownMenuItem>
+          {TAG_COLORS.filter((c) => c !== tag.color).slice(0, 6).map((color) => (
+            <DropdownMenuItem key={color} onClick={() => updateTag(tag.id, { color })}>
+              <span className="h-3 w-3 rounded-full mr-2" style={{ backgroundColor: color }} />
+              <span className="capitalize">{color === '#6366f1' ? 'Indigo' : color === '#f59e0b' ? 'Amber' : color === '#10b981' ? 'Emerald' : color === '#ef4444' ? 'Red' : color === '#8b5cf6' ? 'Purple' : color === '#ec4899' ? 'Pink' : color === '#06b6d4' ? 'Cyan' : 'Orange'}</span>
+            </DropdownMenuItem>
+          ))}
+          <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+            <Trash2 className="h-3.5 w-3.5 mr-2" />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
+
 function ProjectItem({ project }: { project: { id: string; name: string; icon?: string | null; note_count: number } }) {
   const [renaming, setRenaming] = useState(false);
   const [renameName, setRenameName] = useState(project.name);
@@ -393,7 +493,7 @@ function ProjectItem({ project }: { project: { id: string; name: string; icon?: 
 
 export function Sidebar() {
   const { tree, fetchTree } = useFoldersStore();
-  const { tags, fetchTags, activeTagId, setActiveTag, createTag } = useTagsStore();
+  const { tags, fetchTags, setActiveTag, createTag } = useTagsStore();
   const { fetchNotes, setActiveNote } = useNotesStore();
   const { projects, fetchProjects, createProject } = useProjectsStore();
   const { theme, toggleTheme, setView, setSearchOpen, setMobileSidebarOpen, view } = useUIStore();
@@ -578,31 +678,7 @@ export function Sidebar() {
             </div>
           )}
           {tags.map((tag) => (
-            <button
-              key={tag.id}
-              className={cn(
-                'flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors',
-                'hover:bg-sidebar-accent',
-                activeTagId === tag.id && 'bg-sidebar-accent font-medium'
-              )}
-              onClick={() => {
-                setActiveTag(tag.id);
-                setActiveFolder(null);
-                setView('tag');
-                setActiveNote(null);
-                setMobileSidebarOpen(false);
-                fetchNotes({ tag_id: tag.id });
-              }}
-            >
-              <span
-                className="h-2.5 w-2.5 rounded-full shrink-0"
-                style={{ backgroundColor: tag.color }}
-              />
-              <span className="truncate">{tag.name}</span>
-              {tag.note_count > 0 && (
-                <span className="ml-auto text-xs text-muted-foreground/60">{tag.note_count}</span>
-              )}
-            </button>
+            <TagItem key={tag.id} tag={tag} />
           ))}
         </CollapsibleSection>
 

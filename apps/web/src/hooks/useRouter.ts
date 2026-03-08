@@ -1,12 +1,30 @@
 import { useEffect, useRef } from 'react';
-import { decodeRoute, pushRoute, replaceRoute, type RouteState } from '@/lib/router';
+import { decodeRoute, pushRoute, type RouteState } from '@/lib/router';
 import { useUIStore } from '@/stores/ui-store';
 import { useNotesStore } from '@/stores/notes-store';
 import { useFoldersStore } from '@/stores/folders-store';
 import { useTagsStore } from '@/stores/tags-store';
 import { useProjectsStore } from '@/stores/projects-store';
 
-// Syncs URL hash ↔ app state
+function fetchForRoute(route: RouteState, fetchNotes: (params?: any) => Promise<void>) {
+  if (route.view === 'folder' && route.folderId) {
+    fetchNotes({ folder_id: route.folderId });
+  } else if (route.view === 'tag' && route.tagId) {
+    fetchNotes({ tag_id: route.tagId });
+  } else if (route.view === 'board' && route.projectId) {
+    fetchNotes({ project_id: route.projectId });
+  } else if (route.view === 'trash') {
+    fetchNotes({ trashed: true });
+  } else if (route.view === 'favorites') {
+    fetchNotes({ pinned: true });
+  } else if (route.view === 'completed') {
+    fetchNotes({ completed: true });
+  } else {
+    fetchNotes();
+  }
+}
+
+// Syncs URL pathname ↔ app state
 export function useRouter() {
   const setView = useUIStore((s) => s.setView);
   const view = useUIStore((s) => s.view);
@@ -15,21 +33,15 @@ export function useRouter() {
   const { activeTagId, setActiveTag } = useTagsStore();
   const { activeProjectId, setActiveProject } = useProjectsStore();
   const initializedRef = useRef(false);
-  const suppressHashUpdate = useRef(false);
+  const suppressPathUpdate = useRef(false);
 
   // Restore state from URL on mount
   useEffect(() => {
     if (initializedRef.current) return;
     initializedRef.current = true;
 
-    const hash = window.location.hash;
-    if (!hash || hash === '#' || hash === '#/') {
-      fetchNotes();
-      return;
-    }
-
-    const route = decodeRoute(hash);
-    suppressHashUpdate.current = true;
+    const route = decodeRoute(window.location.pathname);
+    suppressPathUpdate.current = true;
 
     setView(route.view);
     setActiveFolder(route.folderId);
@@ -37,30 +49,14 @@ export function useRouter() {
     setActiveProject(route.projectId);
     setActiveNote(route.noteId);
 
-    // Fetch notes for the restored view
-    if (route.view === 'folder' && route.folderId) {
-      fetchNotes({ folder_id: route.folderId });
-    } else if (route.view === 'tag' && route.tagId) {
-      fetchNotes({ tag_id: route.tagId });
-    } else if (route.view === 'board' && route.projectId) {
-      fetchNotes({ project_id: route.projectId });
-    } else if (route.view === 'trash') {
-      fetchNotes({ trashed: true });
-    } else if (route.view === 'favorites') {
-      fetchNotes({ pinned: true });
-    } else if (route.view === 'completed') {
-      fetchNotes({ completed: true });
-    } else if (route.view === 'all' || route.view === 'home') {
-      fetchNotes();
-    }
+    fetchForRoute(route, fetchNotes);
 
-    // Allow hash updates after a tick
-    requestAnimationFrame(() => { suppressHashUpdate.current = false; });
+    requestAnimationFrame(() => { suppressPathUpdate.current = false; });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Push hash on state changes
+  // Push path on state changes
   useEffect(() => {
-    if (suppressHashUpdate.current) return;
+    if (suppressPathUpdate.current) return;
 
     const state: RouteState = {
       view,
@@ -76,8 +72,8 @@ export function useRouter() {
   // Handle browser back/forward
   useEffect(() => {
     const onPopState = () => {
-      const route = decodeRoute(window.location.hash);
-      suppressHashUpdate.current = true;
+      const route = decodeRoute(window.location.pathname);
+      suppressPathUpdate.current = true;
 
       setView(route.view);
       setActiveFolder(route.folderId);
@@ -85,24 +81,9 @@ export function useRouter() {
       setActiveProject(route.projectId);
       setActiveNote(route.noteId);
 
-      // Fetch notes for the view
-      if (route.view === 'folder' && route.folderId) {
-        fetchNotes({ folder_id: route.folderId });
-      } else if (route.view === 'tag' && route.tagId) {
-        fetchNotes({ tag_id: route.tagId });
-      } else if (route.view === 'board' && route.projectId) {
-        fetchNotes({ project_id: route.projectId });
-      } else if (route.view === 'trash') {
-        fetchNotes({ trashed: true });
-      } else if (route.view === 'favorites') {
-        fetchNotes({ pinned: true });
-      } else if (route.view === 'completed') {
-        fetchNotes({ completed: true });
-      } else {
-        fetchNotes();
-      }
+      fetchForRoute(route, fetchNotes);
 
-      requestAnimationFrame(() => { suppressHashUpdate.current = false; });
+      requestAnimationFrame(() => { suppressPathUpdate.current = false; });
     };
 
     window.addEventListener('popstate', onPopState);

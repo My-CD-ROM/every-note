@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CalendarClock, Check, CheckCircle2, ChevronRight, ChevronUp, Loader2, Repeat, Settings2, Undo2, X } from 'lucide-react';
+import { Bold, CalendarClock, Check, CheckCircle2, ChevronRight, ChevronUp, Code, Heading2, Italic, Link as LinkIcon, List, ListChecks, Loader2, Repeat, Settings2, Undo2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -238,7 +238,30 @@ export function BoardCardContent({ hook, onClose }: Props) {
               />
             </div>
 
-
+            {/* Bottom formatting bar */}
+            <div className="flex items-center gap-0.5 border-t px-2 py-1 bg-muted/30 shrink-0 overflow-x-auto">
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Checkbox" onClick={() => editorRef.current?.insertAtCursor('\n- [ ] ')}>
+                <ListChecks className="h-3.5 w-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Bold" onClick={() => editorRef.current?.wrapSelection('**', '**')}>
+                <Bold className="h-3.5 w-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Italic" onClick={() => editorRef.current?.wrapSelection('*', '*')}>
+                <Italic className="h-3.5 w-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Heading" onClick={() => editorRef.current?.insertAtCursor('\n## ')}>
+                <Heading2 className="h-3.5 w-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Bullet list" onClick={() => editorRef.current?.insertAtCursor('\n- ')}>
+                <List className="h-3.5 w-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Code" onClick={() => editorRef.current?.wrapSelection('`', '`')}>
+                <Code className="h-3.5 w-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Link" onClick={() => editorRef.current?.wrapSelection('[', '](url)')}>
+                <LinkIcon className="h-3.5 w-3.5" />
+              </Button>
+            </div>
 
             <AttachmentPanel
               key={`attach-${note.id}-${attachKey}`}

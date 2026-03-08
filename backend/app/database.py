@@ -234,6 +234,7 @@ def init_db():
         ("notes", "project_id", "ALTER TABLE notes ADD COLUMN project_id TEXT REFERENCES projects(id) ON DELETE SET NULL"),
         ("notes", "recurrence_rule", "ALTER TABLE notes ADD COLUMN recurrence_rule TEXT DEFAULT NULL"),
         ("notes", "recurrence_source_id", "ALTER TABLE notes ADD COLUMN recurrence_source_id TEXT REFERENCES notes(id) ON DELETE SET NULL"),
+        ("tags", "project_id", "ALTER TABLE tags ADD COLUMN project_id TEXT REFERENCES projects(id) ON DELETE CASCADE"),
     ]
     for table, column, sql in migrations:
         try:
@@ -251,6 +252,13 @@ def init_db():
             conn.execute(idx_sql)
         except sqlite3.OperationalError:
             pass
+
+    # Drop old unique constraint on tag name, replace with (name, project_id)
+    try:
+        conn.execute("DROP INDEX IF EXISTS ix_tags_name")
+    except sqlite3.OperationalError:
+        pass
+    conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_tags_name_project ON tags(COALESCE(project_id, ''), name)")
 
     # Create FTS5 virtual table (must check separately since CREATE ... IF NOT EXISTS not supported for virtual tables)
     fts_exists = conn.execute(

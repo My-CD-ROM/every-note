@@ -28,8 +28,9 @@ class NoteLink(SQLModel, table=True):
 class Tag(SQLModel, table=True):
     __tablename__ = "tags"
     id: str = Field(default_factory=generate_ulid, primary_key=True)
-    name: str = Field(index=True, unique=True)
+    name: str = Field(index=True)
     color: str = Field(default="#6366f1")
+    project_id: Optional[str] = Field(default=None, foreign_key="projects.id")
     created_at: str = Field(default_factory=utc_now)
 
     notes: list["Note"] = Relationship(back_populates="tags", link_model=NoteTag)

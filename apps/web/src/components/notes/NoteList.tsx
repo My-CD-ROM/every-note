@@ -170,20 +170,21 @@ function CardChecklistItems({ note }: { note: NoteResponse }) {
   return (
     <div className="mt-1.5 space-y-0.5">
       {items.slice(0, 4).map((item, i) => (
-        <button
-          key={item.id}
-          onClick={(e) => { e.stopPropagation(); toggleItem(i); }}
-          className="flex items-center gap-1.5 w-full text-left group/item"
-        >
-          {item.checked ? (
-            <CheckCircle2 className="h-3 w-3 text-primary shrink-0" />
-          ) : (
-            <Circle className="h-3 w-3 text-muted-foreground/30 group-hover/item:text-muted-foreground shrink-0" />
-          )}
+        <div key={item.id} className="flex items-center gap-1.5">
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleItem(i); }}
+            className="shrink-0 group/item"
+          >
+            {item.checked ? (
+              <CheckCircle2 className="h-3 w-3 text-primary" />
+            ) : (
+              <Circle className="h-3 w-3 text-muted-foreground/30 group-hover/item:text-muted-foreground" />
+            )}
+          </button>
           <span className={cn('text-xs truncate', item.checked && 'line-through text-muted-foreground/50')}>
             {item.text || 'Empty item'}
           </span>
-        </button>
+        </div>
       ))}
       {items.length > 4 && (
         <span className="text-[10px] text-muted-foreground/50 pl-4.5">+{items.length - 4} more</span>

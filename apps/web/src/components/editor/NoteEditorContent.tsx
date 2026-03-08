@@ -1,4 +1,4 @@
-import { Bell, CalendarClock, Check, CheckCircle2, ChevronRight, History, Loader2, MoreHorizontal, Paperclip, Repeat, Star, Tag, Trash2, Undo2, X } from 'lucide-react';
+import { Bell, CalendarClock, Check, CheckCircle2, ChevronRight, FileText, History, ListChecks, Loader2, MoreHorizontal, Paperclip, Repeat, Star, Tag, Trash2, Undo2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -397,6 +397,13 @@ export function NoteEditorContent({ hook, onClose }: Props) {
               <DropdownMenuItem onClick={() => setShowHistory(!showHistory)}>
                 <History className="h-4 w-4 mr-2" />
                 Version history
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                const newType = note.note_type === 'checklist' ? 'note' : 'checklist';
+                updateNote(note.id, { note_type: newType });
+              }}>
+                {note.note_type === 'checklist' ? <FileText className="h-4 w-4 mr-2" /> : <ListChecks className="h-4 w-4 mr-2" />}
+                {note.note_type === 'checklist' ? 'Convert to note' : 'Convert to checklist'}
               </DropdownMenuItem>
               {!note.is_completed && (
                 <DropdownMenuItem onClick={() => completeNote(note.id)}>

@@ -176,27 +176,6 @@ export function BoardCardContent({ hook, onClose }: Props) {
             </div>
           )}
 
-          {/* Tags bar */}
-          {note.tags.length > 0 && (
-            <div className="flex items-center gap-1.5 px-4 py-1 border-b flex-wrap shrink-0">
-              {note.tags.map((tag) => (
-                <span
-                  key={tag.id}
-                  className="inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 cursor-pointer hover:opacity-70 transition-opacity"
-                  style={{ color: tag.color, backgroundColor: `${tag.color}18` }}
-                  title={`Remove tag: ${tag.name}`}
-                  onClick={async () => {
-                    await notesApi.removeTag(note.id, tag.id);
-                    fetchNotes();
-                  }}
-                >
-                  {tag.name}
-                  <X className="h-2.5 w-2.5" />
-                </span>
-              ))}
-            </div>
-          )}
-
           {/* Floating format toolbar (appears on text selection, notes only) */}
           {note.note_type !== 'checklist' && selectionCoords && (
             <FormatToolbar editorRef={editorRef} coords={selectionCoords} />

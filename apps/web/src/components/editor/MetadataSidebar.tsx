@@ -78,6 +78,8 @@ export function MetadataSidebar({ hook }: Props) {
   const { tree, fetchTree } = useFoldersStore();
   const [newTagName, setNewTagName] = useState('');
 
+  const refetchNotes = () => fetchNotes(note?.project_id ? { project_id: note.project_id } : undefined);
+
   useEffect(() => {
     fetchTags(note?.project_id ?? undefined);
     fetchTree();
@@ -102,7 +104,7 @@ export function MetadataSidebar({ hook }: Props) {
                 }`}
                 onClick={async () => {
                   await notesApi.setStatus(note.id, note.status === s.id ? null : s.id);
-                  fetchNotes();
+                  refetchNotes();
                 }}
               >
                 <span
@@ -182,7 +184,7 @@ export function MetadataSidebar({ hook }: Props) {
                     className="hover:opacity-70"
                     onClick={async () => {
                       await notesApi.removeTag(note.id, tag.id);
-                      fetchNotes();
+                      refetchNotes();
                     }}
                   >
                     <X className="h-2.5 w-2.5" />
@@ -214,7 +216,7 @@ export function MetadataSidebar({ hook }: Props) {
                       } else {
                         await notesApi.addTag(note.id, tag.id);
                       }
-                      fetchNotes();
+                      refetchNotes();
                     }}
                   >
                     <span
@@ -238,7 +240,7 @@ export function MetadataSidebar({ hook }: Props) {
                     });
                     await notesApi.addTag(note.id, tag.id);
                     setNewTagName('');
-                    fetchNotes();
+                    refetchNotes();
                   }}
                 >
                   <input
@@ -272,7 +274,7 @@ export function MetadataSidebar({ hook }: Props) {
                     className="ml-auto text-muted-foreground hover:text-foreground"
                     onClick={async () => {
                       await notesApi.removeRecurrence(note.id);
-                      fetchNotes();
+                      refetchNotes();
                     }}
                   >
                     <X className="h-3 w-3" />
@@ -316,7 +318,7 @@ export function MetadataSidebar({ hook }: Props) {
                     onClick={async () => {
                       await updateNote(note.id, { recurrence_rule: { freq: recFreq, interval: recInterval } });
                       setRecurrencePopoverOpen(false);
-                      fetchNotes();
+                      refetchNotes();
                     }}
                   >
                     {note.recurrence_rule ? 'Update' : 'Set'}

@@ -521,8 +521,8 @@ export function NoteEditorContent({ hook, onClose }: Props) {
           </ScrollArea>
         </div>
 
-        {/* Collapsible bottom sections */}
-        {!note.parent_id && (
+        {/* Subtasks only for checklists/tasks, not regular notes */}
+        {!note.parent_id && note.note_type === 'checklist' && (
           <SubtaskList noteId={note.id} onOpenSubtask={handleOpenSubtask} />
         )}
 

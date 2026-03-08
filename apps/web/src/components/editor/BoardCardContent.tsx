@@ -244,8 +244,8 @@ export function BoardCardContent({ hook, onClose }: Props) {
               )}
             </div>
 
-            {/* Bottom sections inside scroll */}
-            {!note.parent_id && (
+            {/* Subtasks only for checklists/tasks */}
+            {!note.parent_id && note.note_type === 'checklist' && (
               <SubtaskList noteId={note.id} onOpenSubtask={handleOpenSubtask} />
             )}
 

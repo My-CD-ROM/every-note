@@ -23,7 +23,10 @@ export function useRouter() {
     initializedRef.current = true;
 
     const hash = window.location.hash;
-    if (!hash || hash === '#' || hash === '#/') return;
+    if (!hash || hash === '#' || hash === '#/') {
+      fetchNotes();
+      return;
+    }
 
     const route = decodeRoute(hash);
     suppressHashUpdate.current = true;

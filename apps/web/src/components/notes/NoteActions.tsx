@@ -39,10 +39,10 @@ export function NoteActions({ note }: { note: NoteResponse }) {
 
   useEffect(() => {
     if (open) {
-      fetchTags();
+      fetchTags(note.project_id ?? undefined);
       fetchProjects();
     }
-  }, [open, fetchTags, fetchProjects]);
+  }, [open, fetchTags, fetchProjects, note.project_id]);
 
   const folders = flattenFolders(tree);
 

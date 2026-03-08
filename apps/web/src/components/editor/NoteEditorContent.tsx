@@ -479,6 +479,33 @@ export function NoteEditorContent({ hook, onClose }: Props) {
           <FormatToolbar editorRef={editorRef} coords={selectionCoords} />
         )}
 
+        {/* Fixed formatting bar — notes only */}
+        {note.note_type !== 'checklist' && (
+          <div className="flex items-center gap-0.5 border-b px-2 py-1 bg-muted/30 shrink-0 overflow-x-auto">
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Checkbox" onClick={() => editorRef.current?.insertAtCursor('\n- [ ] ')}>
+              <ListChecks className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Bold" onClick={() => editorRef.current?.wrapSelection('**', '**')}>
+              <Bold className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Italic" onClick={() => editorRef.current?.wrapSelection('*', '*')}>
+              <Italic className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Heading" onClick={() => editorRef.current?.insertAtCursor('\n## ')}>
+              <Heading2 className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Bullet list" onClick={() => editorRef.current?.insertAtCursor('\n- ')}>
+              <List className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Code" onClick={() => editorRef.current?.wrapSelection('`', '`')}>
+              <Code className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Link" onClick={() => editorRef.current?.wrapSelection('[', '](url)')}>
+              <LinkIcon className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        )}
+
         {/* Editor area with drag-and-drop */}
         <div
           className={`flex flex-1 min-h-[200px] overflow-hidden relative ${isDragOver ? 'ring-2 ring-primary ring-inset' : ''}`}
@@ -519,33 +546,6 @@ export function NoteEditorContent({ hook, onClose }: Props) {
             )}
           </ScrollArea>
         </div>
-
-        {/* Bottom formatting bar — notes only */}
-        {note.note_type !== 'checklist' && (
-          <div className="flex items-center gap-0.5 border-t px-2 py-1 bg-muted/30 shrink-0 overflow-x-auto">
-            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Checkbox" onClick={() => editorRef.current?.insertAtCursor('\n- [ ] ')}>
-              <ListChecks className="h-3.5 w-3.5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Bold" onClick={() => editorRef.current?.wrapSelection('**', '**')}>
-              <Bold className="h-3.5 w-3.5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Italic" onClick={() => editorRef.current?.wrapSelection('*', '*')}>
-              <Italic className="h-3.5 w-3.5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Heading" onClick={() => editorRef.current?.insertAtCursor('\n## ')}>
-              <Heading2 className="h-3.5 w-3.5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Bullet list" onClick={() => editorRef.current?.insertAtCursor('\n- ')}>
-              <List className="h-3.5 w-3.5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Code" onClick={() => editorRef.current?.wrapSelection('`', '`')}>
-              <Code className="h-3.5 w-3.5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Link" onClick={() => editorRef.current?.wrapSelection('[', '](url)')}>
-              <LinkIcon className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        )}
 
         <AttachmentPanel
           key={`attach-${note.id}-${attachKey}`}

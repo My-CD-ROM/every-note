@@ -6,7 +6,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Calendar } from '@/components/ui/calendar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MarkdownEditor } from './MarkdownEditor';
-import { ChecklistEditor } from './ChecklistEditor';
 import { FormatToolbar } from './FormatToolbar';
 import { VersionHistory } from './VersionHistory';
 import { Backlinks } from './Backlinks';
@@ -475,7 +474,7 @@ export function NoteEditorContent({ hook, onClose }: Props) {
         )}
 
         {/* Floating format toolbar (appears on text selection) */}
-        {note.note_type !== 'checklist' && selectionCoords && (
+        {selectionCoords && (
           <FormatToolbar editorRef={editorRef} coords={selectionCoords} />
         )}
 
@@ -506,17 +505,13 @@ export function NoteEditorContent({ hook, onClose }: Props) {
             </div>
           )}
           <ScrollArea className="w-full">
-            {note.note_type === 'checklist' ? (
-              <ChecklistEditor value={content} onChange={handleContentChange} />
-            ) : (
-              <MarkdownEditor
-                ref={editorRef}
-                value={content}
-                onChange={handleContentChange}
-                onSelectionChange={setSelectionCoords}
-                className="h-full"
-              />
-            )}
+            <MarkdownEditor
+              ref={editorRef}
+              value={content}
+              onChange={handleContentChange}
+              onSelectionChange={setSelectionCoords}
+              className="h-full"
+            />
           </ScrollArea>
         </div>
 

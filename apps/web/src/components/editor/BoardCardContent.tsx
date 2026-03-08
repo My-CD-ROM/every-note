@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MarkdownEditor } from './MarkdownEditor';
-import { ChecklistEditor } from './ChecklistEditor';
 import { FormatToolbar } from './FormatToolbar';
 import { Backlinks } from './Backlinks';
 import { AttachmentPanel } from './AttachmentPanel';
@@ -198,7 +197,7 @@ export function BoardCardContent({ hook, onClose }: Props) {
           )}
 
           {/* Floating format toolbar (appears on text selection) */}
-          {note.note_type !== 'checklist' && selectionCoords && (
+          {selectionCoords && (
             <FormatToolbar editorRef={editorRef} coords={selectionCoords} />
           )}
 
@@ -230,17 +229,13 @@ export function BoardCardContent({ hook, onClose }: Props) {
                   <span className="text-sm font-medium text-primary">Drop to attach</span>
                 </div>
               )}
-              {note.note_type === 'checklist' ? (
-                <ChecklistEditor value={content} onChange={handleContentChange} />
-              ) : (
-                <MarkdownEditor
-                  ref={editorRef}
-                  value={content}
-                  onChange={handleContentChange}
-                  onSelectionChange={setSelectionCoords}
-                  className="h-full"
-                />
-              )}
+              <MarkdownEditor
+                ref={editorRef}
+                value={content}
+                onChange={handleContentChange}
+                onSelectionChange={setSelectionCoords}
+                className="h-full"
+              />
             </div>
 
 

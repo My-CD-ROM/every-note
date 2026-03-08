@@ -257,187 +257,192 @@ export function MetadataSidebar({ hook }: Props) {
         </div>
       </section>
 
-      {/* 4. Recurrence */}
-      <section>
-        <div className={LABEL}>Recurrence</div>
-        <div className="mt-1.5">
-          {note.recurrence_rule && (
-            <div className="flex items-center gap-1.5 text-sm mb-1.5">
-              <Repeat className="h-3.5 w-3.5 text-muted-foreground" />
-              <span>{formatRecurrence(note.recurrence_rule)}</span>
-              <button
-                className="ml-auto text-muted-foreground hover:text-foreground"
-                onClick={async () => {
-                  await notesApi.removeRecurrence(note.id);
-                  fetchNotes();
-                }}
-              >
-                <X className="h-3 w-3" />
-              </button>
+      {/* 4-8: Notes-only sections (hidden for project tasks) */}
+      {!note.project_id && (
+        <>
+          {/* 4. Recurrence */}
+          <section>
+            <div className={LABEL}>Recurrence</div>
+            <div className="mt-1.5">
+              {note.recurrence_rule && (
+                <div className="flex items-center gap-1.5 text-sm mb-1.5">
+                  <Repeat className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span>{formatRecurrence(note.recurrence_rule)}</span>
+                  <button
+                    className="ml-auto text-muted-foreground hover:text-foreground"
+                    onClick={async () => {
+                      await notesApi.removeRecurrence(note.id);
+                      fetchNotes();
+                    }}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
+              <Popover open={recurrencePopoverOpen} onOpenChange={setRecurrencePopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="w-full justify-start text-xs">
+                    <Repeat className="h-3.5 w-3.5 mr-1.5" />
+                    {note.recurrence_rule ? 'Edit' : 'Set recurrence'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-52 p-3" align="start">
+                  <div className="text-xs font-medium text-muted-foreground mb-2">Repeat</div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm shrink-0">Every</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={99}
+                      value={recInterval}
+                      onChange={(e) => setRecInterval(Math.max(1, parseInt(e.target.value) || 1))}
+                      className="flex h-8 w-16 rounded-md border bg-transparent px-2 py-1 text-sm text-center"
+                    />
+                    <select
+                      value={recFreq}
+                      onChange={(e) => setRecFreq(e.target.value as RecurrenceRule['freq'])}
+                      className="flex h-8 flex-1 rounded-md border bg-transparent px-1 py-1 text-sm"
+                    >
+                      {FREQ_OPTIONS.map((f) => (
+                        <option key={f.value} value={f.value}>
+                          {recInterval > 1 ? `${f.label}s` : f.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <Button
+                    size="sm"
+                    className="w-full mt-3"
+                    onClick={async () => {
+                      await updateNote(note.id, { recurrence_rule: { freq: recFreq, interval: recInterval } });
+                      setRecurrencePopoverOpen(false);
+                      fetchNotes();
+                    }}
+                  >
+                    {note.recurrence_rule ? 'Update' : 'Set'}
+                  </Button>
+                </PopoverContent>
+              </Popover>
             </div>
-          )}
-          <Popover open={recurrencePopoverOpen} onOpenChange={setRecurrencePopoverOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                <Repeat className="h-3.5 w-3.5 mr-1.5" />
-                {note.recurrence_rule ? 'Edit' : 'Set recurrence'}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-52 p-3" align="start">
-              <div className="text-xs font-medium text-muted-foreground mb-2">Repeat</div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm shrink-0">Every</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={99}
-                  value={recInterval}
-                  onChange={(e) => setRecInterval(Math.max(1, parseInt(e.target.value) || 1))}
-                  className="flex h-8 w-16 rounded-md border bg-transparent px-2 py-1 text-sm text-center"
-                />
-                <select
-                  value={recFreq}
-                  onChange={(e) => setRecFreq(e.target.value as RecurrenceRule['freq'])}
-                  className="flex h-8 flex-1 rounded-md border bg-transparent px-1 py-1 text-sm"
-                >
-                  {FREQ_OPTIONS.map((f) => (
-                    <option key={f.value} value={f.value}>
-                      {recInterval > 1 ? `${f.label}s` : f.label}
-                    </option>
+          </section>
+
+          {/* 5. Folder */}
+          <section>
+            <div className={LABEL}>Folder</div>
+            <div className="mt-1.5">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="w-full justify-start text-xs">
+                    <FolderIcon className="h-3.5 w-3.5 mr-1.5" />
+                    {note.folder_id
+                      ? folders.find((f) => f.id === note.folder_id)?.name || 'Unknown'
+                      : 'No folder'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-48 p-1" align="start">
+                  <button
+                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors ${
+                      !note.folder_id ? 'font-medium' : ''
+                    }`}
+                    onClick={() => updateNote(note.id, { folder_id: null })}
+                  >
+                    No folder
+                    {!note.folder_id && <Check className="h-3 w-3 ml-auto text-primary" />}
+                  </button>
+                  {folders.map((f) => (
+                    <button
+                      key={f.id}
+                      className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors ${
+                        note.folder_id === f.id ? 'font-medium' : ''
+                      }`}
+                      style={{ paddingLeft: `${f.depth * 12 + 8}px` }}
+                      onClick={() => updateNote(note.id, { folder_id: f.id })}
+                    >
+                      {f.name}
+                      {note.folder_id === f.id && <Check className="h-3 w-3 ml-auto text-primary" />}
+                    </button>
                   ))}
-                </select>
-              </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </section>
+
+          {/* 6. Reminder */}
+          <section>
+            <div className={LABEL}>Reminder</div>
+            <div className="mt-1.5">
+              <Popover open={reminderPopoverOpen} onOpenChange={setReminderPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="w-full justify-start text-xs">
+                    <Bell className="h-3.5 w-3.5 mr-1.5" />
+                    Set reminder
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-44 p-1" align="start">
+                  <div className="text-xs font-medium text-muted-foreground px-2 py-1">Remind me</div>
+                  {REMINDER_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.label}
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors"
+                      onClick={async () => {
+                        if (!activeNoteId) return;
+                        let remindAt: Date;
+                        if (opt.minutes === -1) {
+                          remindAt = new Date();
+                          remindAt.setDate(remindAt.getDate() + 1);
+                          remindAt.setHours(9, 0, 0, 0);
+                        } else {
+                          remindAt = new Date(Date.now() + opt.minutes * 60_000);
+                        }
+                        await remindersApi.create(activeNoteId, remindAt.toISOString());
+                        setReminderPopoverOpen(false);
+                      }}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </PopoverContent>
+              </Popover>
+            </div>
+          </section>
+
+          {/* 7. Separator */}
+          <Separator />
+
+          {/* 8. Actions */}
+          <section className="space-y-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start text-xs"
+              onClick={() => updateNote(note.id, { is_pinned: !note.is_pinned })}
+            >
+              <Star className={`h-3.5 w-3.5 mr-1.5 ${note.is_pinned ? 'fill-amber-400 text-amber-400' : ''}`} />
+              {note.is_pinned ? 'Unfavorite' : 'Favorite'}
+            </Button>
+            {!note.is_completed && (
               <Button
+                variant="ghost"
                 size="sm"
-                className="w-full mt-3"
-                onClick={async () => {
-                  await updateNote(note.id, { recurrence_rule: { freq: recFreq, interval: recInterval } });
-                  setRecurrencePopoverOpen(false);
-                  fetchNotes();
-                }}
+                className="w-full justify-start text-xs"
+                onClick={() => completeNote(note.id)}
               >
-                {note.recurrence_rule ? 'Update' : 'Set'}
+                <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                Mark complete
               </Button>
-            </PopoverContent>
-          </Popover>
-        </div>
-      </section>
-
-      {/* 5. Folder */}
-      <section>
-        <div className={LABEL}>Folder</div>
-        <div className="mt-1.5">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                <FolderIcon className="h-3.5 w-3.5 mr-1.5" />
-                {note.folder_id
-                  ? folders.find((f) => f.id === note.folder_id)?.name || 'Unknown'
-                  : 'No folder'}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-48 p-1" align="start">
-              <button
-                className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors ${
-                  !note.folder_id ? 'font-medium' : ''
-                }`}
-                onClick={() => updateNote(note.id, { folder_id: null })}
-              >
-                No folder
-                {!note.folder_id && <Check className="h-3 w-3 ml-auto text-primary" />}
-              </button>
-              {folders.map((f) => (
-                <button
-                  key={f.id}
-                  className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors ${
-                    note.folder_id === f.id ? 'font-medium' : ''
-                  }`}
-                  style={{ paddingLeft: `${f.depth * 12 + 8}px` }}
-                  onClick={() => updateNote(note.id, { folder_id: f.id })}
-                >
-                  {f.name}
-                  {note.folder_id === f.id && <Check className="h-3 w-3 ml-auto text-primary" />}
-                </button>
-              ))}
-            </PopoverContent>
-          </Popover>
-        </div>
-      </section>
-
-      {/* 6. Reminder */}
-      <section>
-        <div className={LABEL}>Reminder</div>
-        <div className="mt-1.5">
-          <Popover open={reminderPopoverOpen} onOpenChange={setReminderPopoverOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                <Bell className="h-3.5 w-3.5 mr-1.5" />
-                Set reminder
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-44 p-1" align="start">
-              <div className="text-xs font-medium text-muted-foreground px-2 py-1">Remind me</div>
-              {REMINDER_OPTIONS.map((opt) => (
-                <button
-                  key={opt.label}
-                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors"
-                  onClick={async () => {
-                    if (!activeNoteId) return;
-                    let remindAt: Date;
-                    if (opt.minutes === -1) {
-                      remindAt = new Date();
-                      remindAt.setDate(remindAt.getDate() + 1);
-                      remindAt.setHours(9, 0, 0, 0);
-                    } else {
-                      remindAt = new Date(Date.now() + opt.minutes * 60_000);
-                    }
-                    await remindersApi.create(activeNoteId, remindAt.toISOString());
-                    setReminderPopoverOpen(false);
-                  }}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </PopoverContent>
-          </Popover>
-        </div>
-      </section>
-
-      {/* 7. Separator */}
-      <Separator />
-
-      {/* 8. Actions */}
-      <section className="space-y-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start text-xs"
-          onClick={() => updateNote(note.id, { is_pinned: !note.is_pinned })}
-        >
-          <Star className={`h-3.5 w-3.5 mr-1.5 ${note.is_pinned ? 'fill-amber-400 text-amber-400' : ''}`} />
-          {note.is_pinned ? 'Unfavorite' : 'Favorite'}
-        </Button>
-        {!note.is_completed && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start text-xs"
-            onClick={() => completeNote(note.id)}
-          >
-            <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
-            Mark complete
-          </Button>
-        )}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start text-xs text-destructive hover:text-destructive"
-          onClick={() => deleteNote(note.id)}
-        >
-          <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-          Move to trash
-        </Button>
-      </section>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start text-xs text-destructive hover:text-destructive"
+              onClick={() => deleteNote(note.id)}
+            >
+              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+              Move to trash
+            </Button>
+          </section>
+        </>
+      )}
     </div>
   );
 }

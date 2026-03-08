@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { CalendarClock, ChevronRight, FileText, FolderIcon, GripVertical, ListChecks, Pin, Plus, Repeat, Search, Square, Star, Trash2, X } from 'lucide-react';
-import { checklistProgressFromContent } from '@/lib/checklist';
+import { checklistProgressFromContent, parseChecklist, serializeChecklist } from '@/lib/checklist';
+import { CheckCircle2, Circle } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -156,6 +157,45 @@ function SelectCheckbox({ selected, onToggle }: { selected: boolean; onToggle: (
   );
 }
 
+function CardChecklistItems({ note }: { note: NoteResponse }) {
+  const { updateNote } = useNotesStore();
+  const items = parseChecklist(note.content);
+  if (items.length === 0) return null;
+
+  const toggleItem = (index: number) => {
+    const updated = items.map((item, i) => i === index ? { ...item, checked: !item.checked } : item);
+    updateNote(note.id, { content: serializeChecklist(updated) });
+  };
+
+  return (
+    <div className="mt-1.5 space-y-0.5">
+      {items.slice(0, 4).map((item, i) => (
+        <div key={item.id} className="flex items-center gap-1.5">
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleItem(i); }}
+            className="shrink-0 group/item"
+          >
+            {item.checked ? (
+              <CheckCircle2 className="h-3 w-3 text-primary" />
+            ) : (
+              <Circle className="h-3 w-3 text-muted-foreground/30 group-hover/item:text-muted-foreground" />
+            )}
+          </button>
+          <span
+            onClick={(e) => { e.stopPropagation(); toggleItem(i); }}
+            className={cn('text-xs truncate cursor-pointer', item.checked && 'line-through text-muted-foreground/50')}
+          >
+            {item.text || 'Empty item'}
+          </span>
+        </div>
+      ))}
+      {items.length > 4 && (
+        <span className="text-[10px] text-muted-foreground/50 pl-4.5">+{items.length - 4} more</span>
+      )}
+    </div>
+  );
+}
+
 function GridNoteCard({ note, showFolder, selected, hasSelection, onToggleSelect }: { note: NoteResponse; showFolder: boolean; selected: boolean; hasSelection: boolean; onToggleSelect: (e: React.MouseEvent) => void }) {
   const { activeNoteId, setActiveNote, updateNote } = useNotesStore();
   const isActive = activeNoteId === note.id;
@@ -201,6 +241,7 @@ function GridNoteCard({ note, showFolder, selected, hasSelection, onToggleSelect
           <NoteActions note={note} />
         </div>
       </div>
+      {note.note_type === 'checklist' && <CardChecklistItems note={note} />}
       <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
         <MetadataBadges note={note} showFolder={showFolder} />
       </div>

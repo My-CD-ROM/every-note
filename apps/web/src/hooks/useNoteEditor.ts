@@ -142,10 +142,10 @@ export function useNoteEditor() {
     return () => window.removeEventListener('keydown', handler);
   }, [flushSave, duePopoverOpen, tagPopoverOpen, setActiveNote]);
 
-  // Fetch tags when tag popover opens
+  // Fetch tags when tag popover opens (scoped to note's project)
   useEffect(() => {
-    if (tagPopoverOpen) fetchTags();
-  }, [tagPopoverOpen, fetchTags]);
+    if (tagPopoverOpen) fetchTags(note?.project_id ?? undefined);
+  }, [tagPopoverOpen, fetchTags, note?.project_id]);
 
   // Warn on navigation if unsaved
   useEffect(() => {

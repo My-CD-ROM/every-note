@@ -1,5 +1,5 @@
-// Hash-based routing: encodes view + context IDs into URL hash
-// Format: #/view/contextId/noteId
+// Path-based routing: encodes view + context IDs into URL path
+// Format: /view/contextId/noteId
 
 type View = 'home' | 'all' | 'folder' | 'tag' | 'trash' | 'favorites' | 'daily' | 'completed' | 'board' | 'finance';
 
@@ -47,11 +47,12 @@ export function encodeRoute(state: RouteState): string {
 
   if (state.noteId) parts.push(state.noteId);
 
-  return '#/' + parts.join('/');
+  const path = '/' + parts.join('/');
+  return path === '/home' ? '/' : path;
 }
 
-export function decodeRoute(hash: string): RouteState {
-  const raw = hash.replace(/^#\/?/, '');
+export function decodeRoute(pathname: string): RouteState {
+  const raw = pathname.replace(/^\//, '');
   const parts = raw.split('/').filter(Boolean);
 
   const alias = parts[0] || 'home';
@@ -76,15 +77,15 @@ export function decodeRoute(hash: string): RouteState {
 }
 
 export function pushRoute(state: RouteState) {
-  const hash = encodeRoute(state);
-  if (window.location.hash !== hash) {
-    window.history.pushState(null, '', hash);
+  const path = encodeRoute(state);
+  if (window.location.pathname !== path) {
+    window.history.pushState(null, '', path);
   }
 }
 
 export function replaceRoute(state: RouteState) {
-  const hash = encodeRoute(state);
-  if (window.location.hash !== hash) {
-    window.history.replaceState(null, '', hash);
+  const path = encodeRoute(state);
+  if (window.location.pathname !== path) {
+    window.history.replaceState(null, '', path);
   }
 }

@@ -108,6 +108,7 @@ class FolderTree(BaseModel):
 class TagCreate(BaseModel):
     name: str
     color: str = "#6366f1"
+    project_id: Optional[str] = None
 
 
 class TagUpdate(BaseModel):
@@ -119,6 +120,7 @@ class TagResponse(BaseModel):
     id: str
     name: str
     color: str
+    project_id: Optional[str] = None
     created_at: str
     note_count: int = 0
 

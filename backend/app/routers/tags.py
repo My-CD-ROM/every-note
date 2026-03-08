@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select, func
@@ -12,8 +12,13 @@ S = Annotated[Session, Depends(get_session)]
 
 
 @router.get("", response_model=list[TagResponse])
-def list_tags(session: S):
-    tags = session.exec(select(Tag).order_by(Tag.name)).all()
+def list_tags(session: S, project_id: Optional[str] = None):
+    query = select(Tag).order_by(Tag.name)
+    if project_id is not None:
+        query = query.where(Tag.project_id == project_id)
+    else:
+        query = query.where(Tag.project_id == None)  # noqa: E711
+    tags = session.exec(query).all()
     result = []
     for t in tags:
         count = session.exec(
@@ -40,11 +45,16 @@ def get_tag(tag_id: str, session: S):
 
 @router.post("", response_model=TagResponse, status_code=201)
 def create_tag(data: TagCreate, session: S):
-    existing = session.exec(select(Tag).where(Tag.name == data.name)).first()
+    query = select(Tag).where(Tag.name == data.name)
+    if data.project_id:
+        query = query.where(Tag.project_id == data.project_id)
+    else:
+        query = query.where(Tag.project_id == None)  # noqa: E711
+    existing = session.exec(query).first()
     if existing:
         raise HTTPException(409, "Tag already exists")
 
-    tag = Tag(id=generate_ulid(), name=data.name, color=data.color)
+    tag = Tag(id=generate_ulid(), name=data.name, color=data.color, project_id=data.project_id)
     session.add(tag)
     session.commit()
     session.refresh(tag)

@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
-import { AlertCircle, Calendar, CalendarClock, CheckCircle2, Clock, Plus, Repeat, Star } from 'lucide-react';
+import { AlertCircle, Calendar, CalendarClock, CheckCircle2, Circle, Clock, Plus, Repeat, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useNotesStore } from '@/stores/notes-store';
 import { useUIStore } from '@/stores/ui-store';
+import { parseChecklist, serializeChecklist } from '@/lib/checklist';
 import type { NoteResponse } from '@/lib/api';
 
 function startOfDay(d: Date): Date {
@@ -40,28 +41,87 @@ function dayLabel(daysAway: number): string {
   return d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
 }
 
-function AgendaItem({ note, detail, onClick }: { note: NoteResponse; detail: string; onClick: () => void }) {
+function ChecklistInline({ note, onUpdate }: { note: NoteResponse; onUpdate: (id: string, content: string) => void }) {
+  const items = parseChecklist(note.content);
+  if (items.length === 0) return null;
+
+  const toggleItem = (index: number) => {
+    const updated = items.map((item, i) => i === index ? { ...item, checked: !item.checked } : item);
+    onUpdate(note.id, serializeChecklist(updated));
+  };
+
   return (
-    <button
-      onClick={onClick}
-      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left hover:bg-muted/50 transition-colors"
-    >
-      <CalendarClock className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0" />
-      <span className="text-sm truncate flex-1">{note.title || 'Untitled'}</span>
-      <span className="text-[10px] text-muted-foreground/50 shrink-0">{detail}</span>
-    </button>
+    <div className="pl-8 pr-3 pb-1.5 space-y-0.5">
+      {items.slice(0, 5).map((item, i) => (
+        <div key={item.id} className="flex items-center gap-2">
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleItem(i); }}
+            className="shrink-0 group/check"
+          >
+            {item.checked ? (
+              <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+            ) : (
+              <Circle className="h-3.5 w-3.5 text-muted-foreground/40 group-hover/check:text-muted-foreground" />
+            )}
+          </button>
+          <span
+            onClick={(e) => { e.stopPropagation(); toggleItem(i); }}
+            className={`text-xs truncate cursor-pointer ${item.checked ? 'line-through text-muted-foreground/50' : ''}`}
+          >
+            {item.text || 'Empty item'}
+          </span>
+        </div>
+      ))}
+      {items.length > 5 && (
+        <span className="text-[10px] text-muted-foreground/50 pl-5">+{items.length - 5} more</span>
+      )}
+    </div>
+  );
+}
+
+function AgendaItem({ note, detail, onClick, onComplete, onUpdateContent }: {
+  note: NoteResponse;
+  detail: string;
+  onClick: () => void;
+  onComplete: (id: string) => void;
+  onUpdateContent: (id: string, content: string) => void;
+}) {
+  const isChecklist = note.note_type === 'checklist';
+  const items = isChecklist ? parseChecklist(note.content) : [];
+  const done = items.filter((i) => i.checked).length;
+
+  return (
+    <div>
+      <button
+        onClick={onClick}
+        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left hover:bg-muted/50 transition-colors"
+      >
+        <button
+          onClick={(e) => { e.stopPropagation(); onComplete(note.id); }}
+          className="shrink-0 group"
+          title="Complete"
+        >
+          <Circle className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary transition-colors" />
+        </button>
+        <span className="text-sm truncate flex-1">{note.title || 'Untitled'}</span>
+        {isChecklist && items.length > 0 && (
+          <span className="text-[10px] text-muted-foreground/50 shrink-0 tabular-nums">{done}/{items.length}</span>
+        )}
+        <span className="text-[10px] text-muted-foreground/50 shrink-0">{detail}</span>
+      </button>
+      {isChecklist && <ChecklistInline note={note} onUpdate={onUpdateContent} />}
+    </div>
   );
 }
 
 export function DashboardPanel() {
-  const { notes, createNote, setActiveNote } = useNotesStore();
+  const { notes, createNote, setActiveNote, completeNote, updateNote } = useNotesStore();
   const { setView } = useUIStore();
 
   const { overdue, dueToday, upcoming, pinned, recurring, recentNotes } = useMemo(() => {
     const active = notes.filter((n) => !n.is_trashed && !n.is_completed);
     const over: NoteResponse[] = [];
     const today: NoteResponse[] = [];
-    // Group upcoming by days-from-now (1..7)
     const upcomingMap = new Map<number, NoteResponse[]>();
 
     for (const n of active) {
@@ -78,12 +138,9 @@ export function DashboardPanel() {
       }
     }
 
-    // Sort overdue by most overdue first
     over.sort((a, b) => new Date(a.due_at!).getTime() - new Date(b.due_at!).getTime());
-    // Sort today by time
     today.sort((a, b) => new Date(a.due_at!).getTime() - new Date(b.due_at!).getTime());
 
-    // Build upcoming groups sorted by day
     const upcomingGroups = [...upcomingMap.entries()]
       .sort((a, b) => a[0] - b[0])
       .map(([day, items]) => ({
@@ -114,6 +171,14 @@ export function DashboardPanel() {
   const handleClickNote = (noteId: string) => {
     setActiveNote(noteId);
     setView('all');
+  };
+
+  const handleComplete = (noteId: string) => {
+    completeNote(noteId);
+  };
+
+  const handleUpdateContent = (noteId: string, content: string) => {
+    updateNote(noteId, { content });
   };
 
   const hasAgenda = overdue.length > 0 || dueToday.length > 0 || upcoming.length > 0;
@@ -186,7 +251,7 @@ export function DashboardPanel() {
                   const days = Math.abs(daysFromNow(note.due_at!));
                   const detail = days === 1 ? '1 day overdue' : `${days} days overdue`;
                   return (
-                    <AgendaItem key={note.id} note={note} detail={detail} onClick={() => handleClickNote(note.id)} />
+                    <AgendaItem key={note.id} note={note} detail={detail} onClick={() => handleClickNote(note.id)} onComplete={handleComplete} onUpdateContent={handleUpdateContent} />
                   );
                 })}
               </div>
@@ -210,6 +275,8 @@ export function DashboardPanel() {
                     note={note}
                     detail={formatDueTime(note.due_at!)}
                     onClick={() => handleClickNote(note.id)}
+                    onComplete={handleComplete}
+                    onUpdateContent={handleUpdateContent}
                   />
                 ))}
               </div>
@@ -237,6 +304,8 @@ export function DashboardPanel() {
                         note={note}
                         detail={formatDueTime(note.due_at!)}
                         onClick={() => handleClickNote(note.id)}
+                        onComplete={handleComplete}
+                        onUpdateContent={handleUpdateContent}
                       />
                     ))}
                   </div>

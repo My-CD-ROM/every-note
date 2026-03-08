@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CalendarClock, Check, CheckCircle2, ChevronRight, ChevronUp, Loader2, Repeat, Settings2, Undo2, X } from 'lucide-react';
+import { Bold, CalendarClock, Check, CheckCircle2, ChevronRight, ChevronUp, Code, Heading2, Italic, Link as LinkIcon, List, ListChecks, Loader2, Repeat, Settings2, Undo2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -7,7 +7,6 @@ import { MarkdownEditor } from './MarkdownEditor';
 import { ChecklistEditor } from './ChecklistEditor';
 import { FormatToolbar } from './FormatToolbar';
 import { Backlinks } from './Backlinks';
-import { SubtaskList } from './SubtaskList';
 import { AttachmentPanel } from './AttachmentPanel';
 import { MetadataSidebar } from './MetadataSidebar';
 import { notesApi } from '@/lib/api';
@@ -177,30 +176,36 @@ export function BoardCardContent({ hook, onClose }: Props) {
             </div>
           )}
 
-          {/* Tags bar */}
-          {note.tags.length > 0 && (
-            <div className="flex items-center gap-1.5 px-4 py-1 border-b flex-wrap shrink-0">
-              {note.tags.map((tag) => (
-                <span
-                  key={tag.id}
-                  className="inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 cursor-pointer hover:opacity-70 transition-opacity"
-                  style={{ color: tag.color, backgroundColor: `${tag.color}18` }}
-                  title={`Remove tag: ${tag.name}`}
-                  onClick={async () => {
-                    await notesApi.removeTag(note.id, tag.id);
-                    fetchNotes();
-                  }}
-                >
-                  {tag.name}
-                  <X className="h-2.5 w-2.5" />
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Floating format toolbar (appears on text selection) */}
+          {/* Floating format toolbar (appears on text selection, notes only) */}
           {note.note_type !== 'checklist' && selectionCoords && (
             <FormatToolbar editorRef={editorRef} coords={selectionCoords} />
+          )}
+
+          {/* Fixed formatting bar — notes only */}
+          {note.note_type !== 'checklist' && (
+            <div className="flex items-center gap-0.5 border-b px-2 py-1 bg-muted/30 shrink-0 overflow-x-auto">
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Checkbox" onClick={() => editorRef.current?.insertAtCursor('\n- [ ] ')}>
+                <ListChecks className="h-3.5 w-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Bold" onClick={() => editorRef.current?.wrapSelection('**', '**')}>
+                <Bold className="h-3.5 w-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Italic" onClick={() => editorRef.current?.wrapSelection('*', '*')}>
+                <Italic className="h-3.5 w-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Heading" onClick={() => editorRef.current?.insertAtCursor('\n## ')}>
+                <Heading2 className="h-3.5 w-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Bullet list" onClick={() => editorRef.current?.insertAtCursor('\n- ')}>
+                <List className="h-3.5 w-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Code" onClick={() => editorRef.current?.wrapSelection('`', '`')}>
+                <Code className="h-3.5 w-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Link" onClick={() => editorRef.current?.wrapSelection('[', '](url)')}>
+                <LinkIcon className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           )}
 
           {/* Scrollable editor + bottom sections */}
@@ -243,11 +248,6 @@ export function BoardCardContent({ hook, onClose }: Props) {
                 />
               )}
             </div>
-
-            {/* Bottom sections inside scroll */}
-            {!note.parent_id && (
-              <SubtaskList noteId={note.id} onOpenSubtask={handleOpenSubtask} />
-            )}
 
             <AttachmentPanel
               key={`attach-${note.id}-${attachKey}`}

@@ -217,10 +217,13 @@ export const foldersApi = {
 // --- Tags ---
 
 export const tagsApi = {
-  list() {
-    return request<TagResponse[]>('/tags');
+  list(projectId?: string | null) {
+    const params = projectId !== undefined
+      ? `?project_id=${projectId ?? ''}`
+      : '';
+    return request<TagResponse[]>(`/tags${params}`);
   },
-  create(data: { name: string; color?: string }) {
+  create(data: { name: string; color?: string; project_id?: string | null }) {
     return request<TagResponse>('/tags', { method: 'POST', body: JSON.stringify(data) });
   },
   update(id: string, data: { name?: string; color?: string }) {

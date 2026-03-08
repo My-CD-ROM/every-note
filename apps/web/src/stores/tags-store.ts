@@ -7,9 +7,9 @@ interface TagsState {
   activeTagId: string | null;
   loading: boolean;
 
-  fetchTags: () => Promise<void>;
+  fetchTags: (projectId?: string | null) => Promise<void>;
   setActiveTag: (id: string | null) => void;
-  createTag: (data: { name: string; color?: string }) => Promise<TagResponse>;
+  createTag: (data: { name: string; color?: string; project_id?: string | null }) => Promise<TagResponse>;
   updateTag: (id: string, data: { name?: string; color?: string }) => Promise<void>;
   deleteTag: (id: string) => Promise<void>;
 }
@@ -19,10 +19,10 @@ export const useTagsStore = create<TagsState>((set) => ({
   activeTagId: null,
   loading: false,
 
-  fetchTags: async () => {
+  fetchTags: async (projectId?: string | null) => {
     set({ loading: true });
     try {
-      const tags = await tagsApi.list();
+      const tags = await tagsApi.list(projectId);
       set({ tags });
     } finally {
       set({ loading: false });

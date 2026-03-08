@@ -1,4 +1,4 @@
-import { Bell, CalendarClock, Check, CheckCircle2, ChevronRight, FileText, History, ListChecks, Loader2, MoreHorizontal, Paperclip, Repeat, Star, Tag, Trash2, Undo2, X } from 'lucide-react';
+import { Bell, Bold, CalendarClock, Check, CheckCircle2, ChevronRight, Code, FileText, Heading2, History, Italic, Link as LinkIcon, List, ListChecks, Loader2, MoreHorizontal, Paperclip, Repeat, Star, Tag, Trash2, Undo2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -10,7 +10,6 @@ import { ChecklistEditor } from './ChecklistEditor';
 import { FormatToolbar } from './FormatToolbar';
 import { VersionHistory } from './VersionHistory';
 import { Backlinks } from './Backlinks';
-import { SubtaskList } from './SubtaskList';
 import { AttachmentPanel } from './AttachmentPanel';
 import { notesApi, remindersApi } from '@/lib/api';
 import type { RecurrenceRule } from '@/lib/api';
@@ -475,14 +474,41 @@ export function NoteEditorContent({ hook, onClose }: Props) {
           </div>
         )}
 
-        {/* Floating format toolbar (appears on text selection) */}
+        {/* Floating format toolbar (appears on text selection, notes only) */}
         {note.note_type !== 'checklist' && selectionCoords && (
           <FormatToolbar editorRef={editorRef} coords={selectionCoords} />
         )}
 
+        {/* Fixed formatting bar — notes only */}
+        {note.note_type !== 'checklist' && (
+          <div className="flex items-center gap-0.5 border-b px-2 py-1 bg-muted/30 shrink-0 overflow-x-auto">
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Checkbox" onClick={() => editorRef.current?.insertAtCursor('\n- [ ] ')}>
+              <ListChecks className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Bold" onClick={() => editorRef.current?.wrapSelection('**', '**')}>
+              <Bold className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Italic" onClick={() => editorRef.current?.wrapSelection('*', '*')}>
+              <Italic className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Heading" onClick={() => editorRef.current?.insertAtCursor('\n## ')}>
+              <Heading2 className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Bullet list" onClick={() => editorRef.current?.insertAtCursor('\n- ')}>
+              <List className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Code" onClick={() => editorRef.current?.wrapSelection('`', '`')}>
+              <Code className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Link" onClick={() => editorRef.current?.wrapSelection('[', '](url)')}>
+              <LinkIcon className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        )}
+
         {/* Editor area with drag-and-drop */}
         <div
-          className={`flex flex-1 min-h-0 overflow-hidden relative ${isDragOver ? 'ring-2 ring-primary ring-inset' : ''}`}
+          className={`flex flex-1 min-h-[200px] overflow-hidden relative ${isDragOver ? 'ring-2 ring-primary ring-inset' : ''}`}
           onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
           onDragLeave={() => setIsDragOver(false)}
           onDrop={(e) => {
@@ -520,11 +546,6 @@ export function NoteEditorContent({ hook, onClose }: Props) {
             )}
           </ScrollArea>
         </div>
-
-        {/* Collapsible bottom sections */}
-        {!note.parent_id && (
-          <SubtaskList noteId={note.id} onOpenSubtask={handleOpenSubtask} />
-        )}
 
         <AttachmentPanel
           key={`attach-${note.id}-${attachKey}`}

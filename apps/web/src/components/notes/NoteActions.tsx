@@ -215,42 +215,6 @@ export function NoteActions({ note }: { note: NoteResponse }) {
           </DropdownMenuSubContent>
         </DropdownMenuSub>
 
-        {/* Convert to subtask / Promote to note */}
-        {note.parent_id ? (
-          <DropdownMenuItem
-            onClick={async () => {
-              await updateNote(note.id, { parent_id: null });
-              fetchNotes();
-              setOpen(false);
-            }}
-          >
-            <ArrowUpFromDot className="mr-2 h-4 w-4" /> Promote to note
-          </DropdownMenuItem>
-        ) : note.subtask_count === 0 && (
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>
-              <CornerDownRight className="mr-2 h-4 w-4" /> Convert to subtask
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent>
-              {notes
-                .filter((n) => n.id !== note.id && !n.parent_id && !n.is_daily && n.subtask_count >= 0)
-                .slice(0, 20)
-                .map((n) => (
-                  <DropdownMenuItem
-                    key={n.id}
-                    onClick={async () => {
-                      await updateNote(note.id, { parent_id: n.id });
-                      fetchNotes();
-                      setOpen(false);
-                    }}
-                  >
-                    <span className="truncate">{n.title || 'Untitled'}</span>
-                  </DropdownMenuItem>
-                ))}
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
-        )}
-
         {/* Set status — only for project tasks */}
         {note.project_id && (
           <DropdownMenuSub>

@@ -482,7 +482,7 @@ export function NoteEditorContent({ hook, onClose }: Props) {
 
         {/* Editor area with drag-and-drop */}
         <div
-          className={`flex flex-1 min-h-0 overflow-hidden relative ${isDragOver ? 'ring-2 ring-primary ring-inset' : ''}`}
+          className={`flex flex-1 min-h-[200px] overflow-hidden relative ${isDragOver ? 'ring-2 ring-primary ring-inset' : ''}`}
           onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
           onDragLeave={() => setIsDragOver(false)}
           onDrop={(e) => {

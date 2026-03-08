@@ -181,7 +181,10 @@ function CardChecklistItems({ note }: { note: NoteResponse }) {
               <Circle className="h-3 w-3 text-muted-foreground/30 group-hover/item:text-muted-foreground" />
             )}
           </button>
-          <span className={cn('text-xs truncate', item.checked && 'line-through text-muted-foreground/50')}>
+          <span
+            onClick={(e) => { e.stopPropagation(); toggleItem(i); }}
+            className={cn('text-xs truncate cursor-pointer', item.checked && 'line-through text-muted-foreground/50')}
+          >
             {item.text || 'Empty item'}
           </span>
         </div>

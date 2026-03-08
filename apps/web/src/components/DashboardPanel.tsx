@@ -53,20 +53,24 @@ function ChecklistInline({ note, onUpdate }: { note: NoteResponse; onUpdate: (id
   return (
     <div className="pl-8 pr-3 pb-1.5 space-y-0.5">
       {items.slice(0, 5).map((item, i) => (
-        <button
-          key={item.id}
-          onClick={(e) => { e.stopPropagation(); toggleItem(i); }}
-          className="flex items-center gap-2 w-full text-left group"
-        >
-          {item.checked ? (
-            <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
-          ) : (
-            <Circle className="h-3.5 w-3.5 text-muted-foreground/40 group-hover:text-muted-foreground shrink-0" />
-          )}
-          <span className={`text-xs truncate ${item.checked ? 'line-through text-muted-foreground/50' : ''}`}>
+        <div key={item.id} className="flex items-center gap-2">
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleItem(i); }}
+            className="shrink-0 group/check"
+          >
+            {item.checked ? (
+              <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+            ) : (
+              <Circle className="h-3.5 w-3.5 text-muted-foreground/40 group-hover/check:text-muted-foreground" />
+            )}
+          </button>
+          <span
+            onClick={(e) => { e.stopPropagation(); toggleItem(i); }}
+            className={`text-xs truncate cursor-pointer ${item.checked ? 'line-through text-muted-foreground/50' : ''}`}
+          >
             {item.text || 'Empty item'}
           </span>
-        </button>
+        </div>
       ))}
       {items.length > 5 && (
         <span className="text-[10px] text-muted-foreground/50 pl-5">+{items.length - 5} more</span>

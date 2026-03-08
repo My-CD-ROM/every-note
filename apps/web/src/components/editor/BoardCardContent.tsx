@@ -7,7 +7,6 @@ import { MarkdownEditor } from './MarkdownEditor';
 import { ChecklistEditor } from './ChecklistEditor';
 import { FormatToolbar } from './FormatToolbar';
 import { Backlinks } from './Backlinks';
-import { SubtaskList } from './SubtaskList';
 import { AttachmentPanel } from './AttachmentPanel';
 import { MetadataSidebar } from './MetadataSidebar';
 import { notesApi } from '@/lib/api';
@@ -244,10 +243,7 @@ export function BoardCardContent({ hook, onClose }: Props) {
               )}
             </div>
 
-            {/* Subtasks only for checklists/tasks */}
-            {!note.parent_id && note.note_type === 'checklist' && (
-              <SubtaskList noteId={note.id} onOpenSubtask={handleOpenSubtask} />
-            )}
+
 
             <AttachmentPanel
               key={`attach-${note.id}-${attachKey}`}

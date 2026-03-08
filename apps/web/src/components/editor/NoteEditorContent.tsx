@@ -10,7 +10,6 @@ import { ChecklistEditor } from './ChecklistEditor';
 import { FormatToolbar } from './FormatToolbar';
 import { VersionHistory } from './VersionHistory';
 import { Backlinks } from './Backlinks';
-import { SubtaskList } from './SubtaskList';
 import { AttachmentPanel } from './AttachmentPanel';
 import { notesApi, remindersApi } from '@/lib/api';
 import type { RecurrenceRule } from '@/lib/api';
@@ -520,11 +519,6 @@ export function NoteEditorContent({ hook, onClose }: Props) {
             )}
           </ScrollArea>
         </div>
-
-        {/* Subtasks only for checklists/tasks, not regular notes */}
-        {!note.parent_id && note.note_type === 'checklist' && (
-          <SubtaskList noteId={note.id} onOpenSubtask={handleOpenSubtask} />
-        )}
 
         <AttachmentPanel
           key={`attach-${note.id}-${attachKey}`}

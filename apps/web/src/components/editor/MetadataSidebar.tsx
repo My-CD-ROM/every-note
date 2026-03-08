@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Bell, CalendarClock, Check, CheckCircle2, FolderIcon, Plus, Repeat, Star, Tag, Trash2, X } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Bell, CalendarClock, Check, CheckCircle2, Clock, FolderIcon, Plus, Repeat, Star, Tag, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -7,7 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { useTagsStore } from '@/stores/tags-store';
 import { useFoldersStore } from '@/stores/folders-store';
 import { notesApi, remindersApi } from '@/lib/api';
-import type { FolderTree, RecurrenceRule } from '@/lib/api';
+import type { FolderTree, RecurrenceRule, ReminderResponse } from '@/lib/api';
 import { STATUSES } from '@/lib/statuses';
 import type { useNoteEditor } from '@/hooks/useNoteEditor';
 
@@ -77,13 +77,24 @@ export function MetadataSidebar({ hook }: Props) {
   const { tags: allTags, fetchTags, createTag } = useTagsStore();
   const { tree, fetchTree } = useFoldersStore();
   const [newTagName, setNewTagName] = useState('');
+  const [noteReminders, setNoteReminders] = useState<ReminderResponse[]>([]);
 
   const refetchNotes = () => fetchNotes(note?.project_id ? { project_id: note.project_id } : undefined);
+
+  const fetchNoteReminders = useCallback(async (noteId: string) => {
+    try {
+      const data = await remindersApi.list(noteId);
+      setNoteReminders(data.filter((r) => !r.is_fired && !r.is_dismissed));
+    } catch {
+      setNoteReminders([]);
+    }
+  }, []);
 
   useEffect(() => {
     fetchTags(note?.project_id ?? undefined);
     fetchTree();
-  }, [fetchTags, fetchTree, note?.project_id]);
+    if (note?.id) fetchNoteReminders(note.id);
+  }, [fetchTags, fetchTree, note?.project_id, note?.id, fetchNoteReminders]);
 
   if (!note) return null;
 
@@ -373,11 +384,34 @@ export function MetadataSidebar({ hook }: Props) {
           <section>
             <div className={LABEL}>Reminder</div>
             <div className="mt-1.5">
+              {noteReminders.length > 0 && (
+                <div className="space-y-1 mb-1.5">
+                  {noteReminders.map((r) => (
+                    <div key={r.id} className="flex items-center gap-1.5 text-sm">
+                      <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <span className={new Date(r.remind_at) < new Date() ? 'text-destructive' : ''}>
+                        {new Date(r.remind_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                        {' '}
+                        {new Date(r.remind_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <button
+                        className="ml-auto text-muted-foreground hover:text-foreground"
+                        onClick={async () => {
+                          await remindersApi.delete(r.id);
+                          fetchNoteReminders(note.id);
+                        }}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
               <Popover open={reminderPopoverOpen} onOpenChange={setReminderPopoverOpen}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" className="w-full justify-start text-xs">
                     <Bell className="h-3.5 w-3.5 mr-1.5" />
-                    Set reminder
+                    {noteReminders.length > 0 ? 'Add another' : 'Set reminder'}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-44 p-1" align="start">
@@ -398,6 +432,7 @@ export function MetadataSidebar({ hook }: Props) {
                         }
                         await remindersApi.create(activeNoteId, remindAt.toISOString());
                         setReminderPopoverOpen(false);
+                        fetchNoteReminders(activeNoteId);
                       }}
                     >
                       {opt.label}

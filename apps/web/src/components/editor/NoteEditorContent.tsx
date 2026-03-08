@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useState } from 'react';
 import { Bell, Bold, CalendarClock, Check, CheckCircle2, ChevronRight, Code, FileText, Heading2, History, Italic, Link as LinkIcon, List, ListChecks, Loader2, MoreHorizontal, Paperclip, Repeat, Star, Tag, Trash2, Undo2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +13,7 @@ import { VersionHistory } from './VersionHistory';
 import { Backlinks } from './Backlinks';
 import { AttachmentPanel } from './AttachmentPanel';
 import { notesApi, remindersApi } from '@/lib/api';
-import type { RecurrenceRule } from '@/lib/api';
+import type { RecurrenceRule, ReminderResponse } from '@/lib/api';
 import type { useNoteEditor } from '@/hooks/useNoteEditor';
 
 const FREQ_OPTIONS: { value: RecurrenceRule['freq']; label: string }[] = [
@@ -94,6 +95,21 @@ export function NoteEditorContent({ hook, onClose }: Props) {
     handleVersionRestore,
     handleUploadFiles,
   } = hook;
+
+  const [reminderCount, setReminderCount] = useState(0);
+
+  const fetchReminderCount = useCallback(async (noteId: string) => {
+    try {
+      const data = await remindersApi.list(noteId);
+      setReminderCount(data.filter((r: ReminderResponse) => !r.is_fired && !r.is_dismissed).length);
+    } catch {
+      setReminderCount(0);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (note?.id) fetchReminderCount(note.id);
+  }, [note?.id, fetchReminderCount]);
 
   if (!note) {
     return null;
@@ -284,10 +300,15 @@ export function NoteEditorContent({ hook, onClose }: Props) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 shrink-0"
+                className="h-8 w-8 shrink-0 relative"
                 title="Set reminder"
               >
                 <Bell className="h-4 w-4" />
+                {reminderCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 h-3.5 min-w-[14px] rounded-full bg-primary text-[9px] font-bold text-primary-foreground flex items-center justify-center px-0.5">
+                    {reminderCount}
+                  </span>
+                )}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-44 p-1" align="end">
@@ -313,6 +334,7 @@ export function NoteEditorContent({ hook, onClose }: Props) {
                     }
                     await remindersApi.create(activeNoteId, remindAt.toISOString());
                     setReminderPopoverOpen(false);
+                    fetchReminderCount(activeNoteId);
                   }}
                 >
                   {opt.label}

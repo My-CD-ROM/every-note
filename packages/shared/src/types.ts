@@ -55,6 +55,7 @@ export interface TagResponse {
   id: string;
   name: string;
   color: string;
+  project_id: string | null;
   created_at: string;
   note_count: number;
 }

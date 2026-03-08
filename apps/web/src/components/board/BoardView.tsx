@@ -211,7 +211,7 @@ function QuickAddInput({ status, projectId }: { status: string; projectId: strin
 
   return (
     <input
-      placeholder="+ Add note..."
+      placeholder="+ Add task..."
       value={title}
       onChange={(e) => setTitle(e.target.value)}
       onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); if (e.key === 'Escape') { setTitle(''); (e.target as HTMLInputElement).blur(); } }}
@@ -354,7 +354,7 @@ export function BoardView() {
         <div className="text-center space-y-1">
           <p className="text-sm font-medium">This board is empty</p>
           <p className="text-xs text-muted-foreground/60">
-            Add notes using the "+ Add note..." input in any column below, or drag existing notes here.
+            Add tasks using the "+ Add task..." input in any column below, or drag existing tasks here.
           </p>
         </div>
         <div className="flex gap-4 mt-4 overflow-x-auto w-full justify-center">

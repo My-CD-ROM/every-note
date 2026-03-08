@@ -423,6 +423,9 @@ def add_tag_to_note(note_id: str, tag_id: str, session: S):
     if not tag:
         raise HTTPException(404, "Tag not found")
 
+    if tag.project_id and tag.project_id != note.project_id:
+        raise HTTPException(400, "Cannot assign project tag to note in different project")
+
     existing = session.get(NoteTag, (note_id, tag_id))
     if not existing:
         session.add(NoteTag(note_id=note_id, tag_id=tag_id))

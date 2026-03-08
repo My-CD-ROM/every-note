@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { Bell, CalendarClock, Check, CheckCircle2, FolderIcon, Repeat, Star, Tag, Trash2, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Bell, CalendarClock, Check, CheckCircle2, FolderIcon, Plus, Repeat, Star, Tag, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -74,13 +74,14 @@ export function MetadataSidebar({ hook }: Props) {
     handleClearDue,
   } = hook;
 
-  const { tags: allTags, fetchTags } = useTagsStore();
+  const { tags: allTags, fetchTags, createTag } = useTagsStore();
   const { tree, fetchTree } = useFoldersStore();
+  const [newTagName, setNewTagName] = useState('');
 
   useEffect(() => {
-    fetchTags();
+    fetchTags(note?.project_id ?? undefined);
     fetchTree();
-  }, [fetchTags, fetchTree]);
+  }, [fetchTags, fetchTree, note?.project_id]);
 
   if (!note) return null;
 
@@ -225,6 +226,32 @@ export function MetadataSidebar({ hook }: Props) {
                   </button>
                 );
               })}
+              <div className="border-t mt-1 pt-1">
+                <form
+                  className="flex items-center gap-1 px-1"
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (!newTagName.trim()) return;
+                    const tag = await createTag({
+                      name: newTagName.trim(),
+                      project_id: note.project_id ?? undefined,
+                    });
+                    await notesApi.addTag(note.id, tag.id);
+                    setNewTagName('');
+                    fetchNotes();
+                  }}
+                >
+                  <input
+                    value={newTagName}
+                    onChange={(e) => setNewTagName(e.target.value)}
+                    placeholder="New tag..."
+                    className="flex h-7 flex-1 rounded-md border bg-transparent px-2 text-xs"
+                  />
+                  <Button type="submit" size="icon" variant="ghost" className="h-7 w-7 shrink-0">
+                    <Plus className="h-3.5 w-3.5" />
+                  </Button>
+                </form>
+              </div>
             </PopoverContent>
           </Popover>
         </div>

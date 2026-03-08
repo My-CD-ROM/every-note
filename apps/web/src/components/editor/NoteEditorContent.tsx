@@ -96,20 +96,20 @@ export function NoteEditorContent({ hook, onClose }: Props) {
     handleUploadFiles,
   } = hook;
 
-  const [reminderCount, setReminderCount] = useState(0);
+  const [noteReminders, setNoteReminders] = useState<ReminderResponse[]>([]);
 
-  const fetchReminderCount = useCallback(async (noteId: string) => {
+  const fetchNoteReminders = useCallback(async (noteId: string) => {
     try {
       const data = await remindersApi.list(noteId);
-      setReminderCount(data.filter((r: ReminderResponse) => !r.is_fired && !r.is_dismissed).length);
+      setNoteReminders(data.filter((r: ReminderResponse) => !r.is_fired && !r.is_dismissed));
     } catch {
-      setReminderCount(0);
+      setNoteReminders([]);
     }
   }, []);
 
   useEffect(() => {
-    if (note?.id) fetchReminderCount(note.id);
-  }, [note?.id, fetchReminderCount]);
+    if (note?.id) fetchNoteReminders(note.id);
+  }, [note?.id, fetchNoteReminders]);
 
   if (!note) {
     return null;
@@ -304,14 +304,37 @@ export function NoteEditorContent({ hook, onClose }: Props) {
                 title="Set reminder"
               >
                 <Bell className="h-4 w-4" />
-                {reminderCount > 0 && (
+                {noteReminders.length > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 h-3.5 min-w-[14px] rounded-full bg-primary text-[9px] font-bold text-primary-foreground flex items-center justify-center px-0.5">
-                    {reminderCount}
+                    {noteReminders.length}
                   </span>
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-44 p-1" align="end">
+            <PopoverContent className="w-52 p-1" align="end">
+              {noteReminders.length > 0 && (
+                <div className="border-b mb-1 pb-1">
+                  <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider px-2 py-1">Active</div>
+                  {noteReminders.map((r) => (
+                    <div key={r.id} className="flex items-center gap-1.5 px-2 py-1 text-xs group">
+                      <span className={new Date(r.remind_at) < new Date() ? 'text-destructive' : 'text-foreground'}>
+                        {new Date(r.remind_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                        {' '}
+                        {new Date(r.remind_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <button
+                        className="ml-auto text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={async () => {
+                          await remindersApi.delete(r.id);
+                          if (activeNoteId) fetchNoteReminders(activeNoteId);
+                        }}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className="text-xs font-medium text-muted-foreground px-2 py-1">Remind me</div>
               {[
                 { label: 'In 15 minutes', minutes: 15 },
@@ -333,8 +356,7 @@ export function NoteEditorContent({ hook, onClose }: Props) {
                       remindAt = new Date(Date.now() + opt.minutes * 60_000);
                     }
                     await remindersApi.create(activeNoteId, remindAt.toISOString());
-                    setReminderPopoverOpen(false);
-                    fetchReminderCount(activeNoteId);
+                    fetchNoteReminders(activeNoteId);
                   }}
                 >
                   {opt.label}

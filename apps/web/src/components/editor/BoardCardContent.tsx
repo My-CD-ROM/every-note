@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MarkdownEditor } from './MarkdownEditor';
+import { ChecklistEditor } from './ChecklistEditor';
 import { FormatToolbar } from './FormatToolbar';
 import { Backlinks } from './Backlinks';
 import { AttachmentPanel } from './AttachmentPanel';
@@ -196,8 +197,8 @@ export function BoardCardContent({ hook, onClose }: Props) {
             </div>
           )}
 
-          {/* Floating format toolbar (appears on text selection) */}
-          {selectionCoords && (
+          {/* Floating format toolbar (appears on text selection, notes only) */}
+          {note.note_type !== 'checklist' && selectionCoords && (
             <FormatToolbar editorRef={editorRef} coords={selectionCoords} />
           )}
 
@@ -229,16 +230,21 @@ export function BoardCardContent({ hook, onClose }: Props) {
                   <span className="text-sm font-medium text-primary">Drop to attach</span>
                 </div>
               )}
-              <MarkdownEditor
-                ref={editorRef}
-                value={content}
-                onChange={handleContentChange}
-                onSelectionChange={setSelectionCoords}
-                className="h-full"
-              />
+              {note.note_type === 'checklist' ? (
+                <ChecklistEditor value={content} onChange={handleContentChange} />
+              ) : (
+                <MarkdownEditor
+                  ref={editorRef}
+                  value={content}
+                  onChange={handleContentChange}
+                  onSelectionChange={setSelectionCoords}
+                  className="h-full"
+                />
+              )}
             </div>
 
-            {/* Bottom formatting bar */}
+            {/* Bottom formatting bar — notes only */}
+            {note.note_type !== 'checklist' && (
             <div className="flex items-center gap-0.5 border-t px-2 py-1 bg-muted/30 shrink-0 overflow-x-auto">
               <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Checkbox" onClick={() => editorRef.current?.insertAtCursor('\n- [ ] ')}>
                 <ListChecks className="h-3.5 w-3.5" />
@@ -262,6 +268,7 @@ export function BoardCardContent({ hook, onClose }: Props) {
                 <LinkIcon className="h-3.5 w-3.5" />
               </Button>
             </div>
+            )}
 
             <AttachmentPanel
               key={`attach-${note.id}-${attachKey}`}

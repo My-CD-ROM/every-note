@@ -6,6 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Calendar } from '@/components/ui/calendar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MarkdownEditor } from './MarkdownEditor';
+import { ChecklistEditor } from './ChecklistEditor';
 import { FormatToolbar } from './FormatToolbar';
 import { VersionHistory } from './VersionHistory';
 import { Backlinks } from './Backlinks';
@@ -473,8 +474,8 @@ export function NoteEditorContent({ hook, onClose }: Props) {
           </div>
         )}
 
-        {/* Floating format toolbar (appears on text selection) */}
-        {selectionCoords && (
+        {/* Floating format toolbar (appears on text selection, notes only) */}
+        {note.note_type !== 'checklist' && selectionCoords && (
           <FormatToolbar editorRef={editorRef} coords={selectionCoords} />
         )}
 
@@ -505,40 +506,46 @@ export function NoteEditorContent({ hook, onClose }: Props) {
             </div>
           )}
           <ScrollArea className="w-full">
-            <MarkdownEditor
-              ref={editorRef}
-              value={content}
-              onChange={handleContentChange}
-              onSelectionChange={setSelectionCoords}
-              className="h-full"
-            />
+            {note.note_type === 'checklist' ? (
+              <ChecklistEditor value={content} onChange={handleContentChange} />
+            ) : (
+              <MarkdownEditor
+                ref={editorRef}
+                value={content}
+                onChange={handleContentChange}
+                onSelectionChange={setSelectionCoords}
+                className="h-full"
+              />
+            )}
           </ScrollArea>
         </div>
 
-        {/* Bottom formatting bar */}
-        <div className="flex items-center gap-0.5 border-t px-2 py-1 bg-muted/30 shrink-0 overflow-x-auto">
-          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Checkbox" onClick={() => editorRef.current?.insertAtCursor('\n- [ ] ')}>
-            <ListChecks className="h-3.5 w-3.5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Bold" onClick={() => editorRef.current?.wrapSelection('**', '**')}>
-            <Bold className="h-3.5 w-3.5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Italic" onClick={() => editorRef.current?.wrapSelection('*', '*')}>
-            <Italic className="h-3.5 w-3.5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Heading" onClick={() => editorRef.current?.insertAtCursor('\n## ')}>
-            <Heading2 className="h-3.5 w-3.5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Bullet list" onClick={() => editorRef.current?.insertAtCursor('\n- ')}>
-            <List className="h-3.5 w-3.5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Code" onClick={() => editorRef.current?.wrapSelection('`', '`')}>
-            <Code className="h-3.5 w-3.5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Link" onClick={() => editorRef.current?.wrapSelection('[', '](url)')}>
-            <LinkIcon className="h-3.5 w-3.5" />
-          </Button>
-        </div>
+        {/* Bottom formatting bar — notes only */}
+        {note.note_type !== 'checklist' && (
+          <div className="flex items-center gap-0.5 border-t px-2 py-1 bg-muted/30 shrink-0 overflow-x-auto">
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Checkbox" onClick={() => editorRef.current?.insertAtCursor('\n- [ ] ')}>
+              <ListChecks className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Bold" onClick={() => editorRef.current?.wrapSelection('**', '**')}>
+              <Bold className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Italic" onClick={() => editorRef.current?.wrapSelection('*', '*')}>
+              <Italic className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Heading" onClick={() => editorRef.current?.insertAtCursor('\n## ')}>
+              <Heading2 className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Bullet list" onClick={() => editorRef.current?.insertAtCursor('\n- ')}>
+              <List className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Code" onClick={() => editorRef.current?.wrapSelection('`', '`')}>
+              <Code className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Link" onClick={() => editorRef.current?.wrapSelection('[', '](url)')}>
+              <LinkIcon className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        )}
 
         <AttachmentPanel
           key={`attach-${note.id}-${attachKey}`}
